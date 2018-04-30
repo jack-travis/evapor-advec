@@ -31,7 +31,7 @@ class core:
                 if l_n[i] < E_n*self.Dt:
                     E_n *= l_n[i]
             if E_n < 0.0:
-                if v_n[i] < E_n*self.Dt:
+                if v_n[i] < -E_n*self.Dt:
                     E_n *= v_n[i]
             drv = v_n[i] - (v_n[i-1] if i > 0 else self.initial[0])
             drl = l_n[i] - (l_n[i-1] if i > 0 else self.initial[1])

@@ -4,7 +4,7 @@ from matplotlib import pyplot
 import model_pare
 
 #need to separate
-vu = numpy.linspace(0.0,0.1,9)
+vu = numpy.linspace(0.0,1.0/9,9)
 for i in range(len(vu)):
     c = model_pare.core()
     #initial conditions
@@ -18,7 +18,7 @@ for i in range(len(vu)):
     c.E[:] = -0.5/c.Dt
     c.E[c.gs/3:int(numpy.round(2.0*c.gs/3))] = 0.5/c.Dt
     #
-    c.run(30)
+    c.run(40)
     #
     X = numpy.linspace(0.0,c.L,c.gs)
     pyplot.subplot(3,3,i+1)

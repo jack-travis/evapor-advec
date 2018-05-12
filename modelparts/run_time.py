@@ -14,14 +14,17 @@ for j in range(len(vu)):
     c.liquid[:] = 1.00
     c.E[:] = -0.5/c.Dt
     c.E[c.gs/3:int(numpy.round(2.0*c.gs/3))] = 0.5/c.Dt
+    #c.vapour[c.gs/4:c.gs/2] = 1.00
+    #c.liquid[c.gs/4:c.gs/2] = 0.00
+    #c.E[:] = 0.0
     #
     t_ar = [0.0]
-    r_ar = [c.vapour/(c.vapour+c.liquid)]
+    r_ar = [c.vapour.copy()]
     #
-    for _ in range(50):
+    for _ in range(100):
         c.step()
         t_ar.append(c.t)
-        r_ar.append(c.vapour/(c.vapour+c.liquid))
+        r_ar.append(c.vapour.copy())
     #
     R = numpy.array(r_ar)
     x_ar = numpy.linspace(0,c.L,c.gs)

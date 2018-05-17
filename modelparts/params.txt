@@ -1,0 +1,9 @@
+#parameters
+
+L:1.		#domain size in arbitrary space units
+gs:90		#"grid size": number of cells along domain
+Dt:0.1		#timestep
+
+u:0.05		#background velocity
+
+duration:10	#runtime in arbitrary time units

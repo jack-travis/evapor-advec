@@ -10,8 +10,8 @@ for j in range(len(vu)):
     c = model_pare.core()
     #
     c.u = vu[j]
-    c.vapour[:] = 0.00
-    c.liquid[:] = 1.00
+    c.vapour[:] = 0.0
+    c.liquid[:] = 1.0
     c.E[:] = -0.5/c.Dt
     c.E[c.gs/3:int(numpy.round(2.0*c.gs/3))] = 0.5/c.Dt
     #c.vapour[c.gs/4:c.gs/2] = 1.00

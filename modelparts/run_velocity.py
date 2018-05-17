@@ -1,24 +1,22 @@
 import numpy
 from matplotlib import pyplot
 
-import model_pare
+import get_constants
+consts = get_constants.extract("params.txt")
+re = numpy.load("evapor_condens.npy")
+rv = numpy.load("vapour_init.npy")
+rl = numpy.load("liquid_init.npy")
 
-#need to separate
-vu = numpy.linspace(0.0,1.0/9,9)
+import model_mcgx
+
+max_u = consts["L"]/(consts["gs"]*consts["Dt"])
+
+vu = numpy.linspace(max_u,max_u*5/3,9)
 for i in range(len(vu)):
-    c = model_pare.core()
-    #initial conditions
+    c = model_mcgx.core(consts,rv,rl,re)
     c.u = vu[i]
-    c.vapour[:] = 0.0
-    c.liquid[:] = 1.0
     #
-    #c.vapour[int(c.gs*0.25):int(c.gs*0.5)] = 1.0
-    #c.liquid[int(c.gs*0.25):int(c.gs*0.5)] = 0.0
-    #c.E[:] = 0.0
-    c.E[:] = -0.5/c.Dt
-    c.E[c.gs/3:int(numpy.round(2.0*c.gs/3))] = 0.5/c.Dt
-    #
-    c.run(70)
+    c.run(100)
     #
     X = numpy.linspace(0.0,c.L,c.gs)
     pyplot.subplot(3,3,i+1)
@@ -27,7 +25,7 @@ for i in range(len(vu)):
     pyplot.plot(X,c.liquid,label="Liquid water")
     #pyplot.legend()
     print "Finished {0} of {1}".format(i+1,len(vu))
-pyplot.subplots_adjust(left=0.05,bottom=0.05,
-                       right=0.95,top=0.95,
-                       wspace=0.15,hspace=0.25)
+pyplot.subplots_adjust(left=0.1,bottom=0.1,
+                       right=0.9,top=0.9,
+                       wspace=0.17,hspace=0.37)
 pyplot.show(block=False)

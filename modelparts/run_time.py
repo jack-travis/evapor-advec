@@ -1,27 +1,28 @@
 import numpy
 from matplotlib import pyplot
 
-import model_pare
+import get_constants
+consts = get_constants.extract("params.txt")
+re = numpy.load("evapor_condens.npy")
+rv = numpy.load("vapour_init.npy")
+rl = numpy.load("liquid_init.npy")
+
+import model_mcgx
+
+max_u = consts["L"]/(consts["gs"]*consts["Dt"])
 
 print "Loaded, running simulations"
 
-vu = numpy.linspace(0.0,1.0/9,9)
+vu = numpy.linspace(0.0,max_u,9)
 for j in range(len(vu)):
-    c = model_pare.core()
+    c = model_mcgx.core(consts,rv,rl,re)
     #
     c.u = vu[j]
-    c.vapour[:] = 0.0
-    c.liquid[:] = 1.0
-    c.E[:] = -0.5/c.Dt
-    c.E[c.gs/3:int(numpy.round(2.0*c.gs/3))] = 0.5/c.Dt
-    #c.vapour[c.gs/4:c.gs/2] = 1.00
-    #c.liquid[c.gs/4:c.gs/2] = 0.00
-    #c.E[:] = 0.0
     #
     t_ar = [0.0]
     r_ar = [c.vapour.copy()]
     #
-    for _ in range(100):
+    for _ in range(300):
         c.step()
         t_ar.append(c.t)
         r_ar.append(c.vapour.copy())
@@ -35,7 +36,7 @@ for j in range(len(vu)):
                       cmap="inferno",vmin=-1.0,vmax=2.0)
     print "Finished {0} of {1}".format(j+1,len(vu))
 #
-pyplot.subplots_adjust(left=0.05,bottom=0.05,
-                       right=0.95,top=0.95,
-                       wspace=0.15,hspace=0.25)
+pyplot.subplots_adjust(left=0.07,bottom=0.07,
+                       right=0.93,top=0.93,
+                       wspace=0.13,hspace=0.27)
 pyplot.show(block=False)

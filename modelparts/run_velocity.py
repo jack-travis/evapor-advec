@@ -11,7 +11,9 @@ import model_mcgx
 
 max_u = consts["L"]/(consts["gs"]*consts["Dt"])
 
-vu = numpy.linspace(max_u,max_u*5/3,9)
+print "Loaded, running simulations"
+
+vu = numpy.linspace(0,max_u,9)
 for i in range(len(vu)):
     c = model_mcgx.core(consts,rv,rl,re)
     c.u = vu[i]

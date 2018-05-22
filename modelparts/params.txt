@@ -1,4 +1,4 @@
-#parameters
+#scalar parameters go here
 
 L:1.		#domain size in arbitrary space units
 gs:90		#"grid size": number of cells along domain

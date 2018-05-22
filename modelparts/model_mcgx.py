@@ -10,9 +10,9 @@ class core:
         #derived
         self.Dx = self.L / self.gs
         #dependent
-        self.vapour = rv
-        self.liquid = rl
-        self.E = re
+        self.vapour = rv.copy()
+        self.liquid = rl.copy()
+        self.E = re.copy()
         self.t = 0.0
         self.initial = [0.0,0.0]
     def initialise(self):

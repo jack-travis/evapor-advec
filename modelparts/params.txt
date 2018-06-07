@@ -5,5 +5,6 @@ gs:90		#"grid size": number of cells along domain
 Dt:0.1		#timestep
 
 u:0.05		#background velocity
+P:101.325	#average air pressure in kPa
 
 duration:10	#runtime in arbitrary time units

@@ -3,10 +3,14 @@ from matplotlib import pyplot
 
 import get_constants
 consts = get_constants.extract("params.txt")
-re = numpy.load("evapor_condens.npy")
+Tf = numpy.load("temp_field.npy")
 rv = numpy.load("vapour_init.npy")
 rl = numpy.load("liquid_init.npy")
 
-import model_mcgx
-c = model_mcgx.core(consts,rv,rl,re)
+import model_teper
+c = model_teper.core(consts,rv,rl,Tf)
 c.run(consts["duration"])
+
+X = numpy.linspace(0.0,c.L,c.gs)
+pyplot.plot(X,c.vapour)
+pyplot.show(block=False)

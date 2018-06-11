@@ -2,22 +2,26 @@ import numpy
 from matplotlib import pyplot
 pyplot.rc("font", size=14)
 
-import model_pare
+import model_teper
+import get_constants
+
+consts = get_constants.extract("params.txt")
+Tf = numpy.load("temp_field.npy")
+rv = numpy.load("vapour_init.npy")
+rl = numpy.load("liquid_init.npy")
 
 from timeit import default_timer as timer
 start = timer()
 
-vu = numpy.linspace(0.0,0.1,150)
+dxdt = (consts["L"]/consts["gs"])/consts["Dt"]
+vu = numpy.linspace(0.0,dxdt,128)
 vurange = []
 
 for j in range(len(vu)):
-    c = model_pare.core()
+    print "U =", vu[j]
+    c = model_teper.core(consts,rv,rl,Tf)
     #
     c.u = vu[j]
-    c.vapour[:] = 0.00
-    c.liquid[:] = 1.00
-    c.E[:] = -0.5/c.Dt
-    c.E[c.gs/3:int(numpy.round(2.0*c.gs/3))] = 0.5/c.Dt
     #
     c.run(10)
     ratred = c.vapour[int(2*c.gs/3):]

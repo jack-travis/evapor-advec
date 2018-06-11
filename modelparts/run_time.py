@@ -3,11 +3,11 @@ from matplotlib import pyplot
 
 import get_constants
 consts = get_constants.extract("params.txt")
-re = numpy.load("evapor_condens.npy")
+Tf = numpy.load("temp_field.npy")
 rv = numpy.load("vapour_init.npy")
 rl = numpy.load("liquid_init.npy")
 
-import model_mcgx
+import model_teper
 
 max_u = consts["L"]/(consts["gs"]*consts["Dt"])
 
@@ -15,9 +15,10 @@ print "Loaded, running simulations"
 
 vu = numpy.linspace(0.0,max_u,9)
 for j in range(len(vu)):
-    c = model_mcgx.core(consts,rv,rl,re)
+    c = model_teper.core(consts,rv,rl,Tf)
     #
     c.u = vu[j]
+    c.liquid = c.vapour.copy()
     #
     t_ar = [0.0]
     r_ar = [c.vapour.copy()]
@@ -33,7 +34,7 @@ for j in range(len(vu)):
     pyplot.subplot(3,3,j+1)
     pyplot.title("u={0:.9f} ({1:.9f} Dx/Dt)".format(vu[j],vu[j]*c.Dt/c.Dx))
     pyplot.pcolormesh(T,X,R.transpose(),
-                      cmap="inferno",vmin=-1.0,vmax=2.0)
+                      cmap="inferno",vmin=0.0,vmax=0.02)
     print "Finished {0} of {1}".format(j+1,len(vu))
 #
 pyplot.subplots_adjust(left=0.07,bottom=0.07,

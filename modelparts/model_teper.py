@@ -25,7 +25,8 @@ class core:
         self.t = 0.0
         #construct "good" values to use at left edge of grid
         good_rvs = condens.rvs(self.Tf[0],self.P)
-        self.initial = [good_rvs,1.0-good_rvs]
+        leftsum = self.vapour[0] + self.liquid[0]
+        self.initial = [good_rvs,leftsum-good_rvs]
         #
         for i in range(self.gs):
             self.rvs[i] = condens.rvs(self.Tf[i],self.P)
@@ -33,11 +34,12 @@ class core:
     def step(self):
         if self.t <= 0.0:
             self.initialise()
-        #first evaporation/condensation,
+        #first B&F evaporation/condensation,
         for i in range(self.gs):
-            self.vapour[i] += (self.rvs[i] - self.vapour[i])/self.E[i]
-            self.liquid[i] -= (self.rvs[i] - self.vapour[i])/self.E[i]
-        #then advection
+            vt = self.vapour[i]
+            self.vapour[i] += (self.rvs[i] - vt)/self.E[i]
+            self.liquid[i] -= (self.rvs[i] - vt)/self.E[i]
+        #then FTBS advection
         v_n = self.vapour.copy()
         l_n = self.liquid.copy()
         for i in range(self.gs):

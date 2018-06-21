@@ -13,7 +13,7 @@ max_u = consts["L"]/(consts["gs"]*consts["Dt"])
 
 print "Loaded, running simulations"
 
-vu = numpy.linspace(0.0,max_u,9)
+vu = numpy.linspace(max_u,max_u*1.5,9)
 for j in range(len(vu)):
     c = model_teper.core(consts,rv,rl,Tf)
     #

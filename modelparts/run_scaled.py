@@ -54,7 +54,8 @@ for j in range(es_size):
     print "Did {0:.2f}%".format(100.*(j+1)/es_size)
 
 RTS,RC = numpy.meshgrid(TS_range,C_range)
-pyplot.pcolor(RTS,RC,energy,vmin=-0.01,vmax=0.01,cmap="nipy_spectral")
+ennan = numpy.ma.masked_where(numpy.isnan(energy),energy)
+pyplot.pcolor(RTS,RC,ennan,vmin=-0.1,vmax=0.1)
 pyplot.colorbar()
 pyplot.xlabel("Condensation timescale")
 pyplot.ylabel("Advection courant number")

@@ -1,0 +1,69 @@
+\documentclass[12pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{varwidth}
+\usepackage{float}			%[H] for "exactly here"
+\usepackage{amsfonts}		%Standard maths
+\usepackage{amsmath}		%Standard maths
+\usepackage{amssymb}		%Standard maths
+\usepackage{caption}
+\usepackage{listings}
+
+\captionsetup[figure]{font=footnotesize}
+\linespread{1.3}		%1.5 spacing
+\lstset{language=Python,breaklines}		%,showtabs=true,tab=\rightarrowfill
+
+\begin{document}
+
+\section{PDE}
+\begin{align*}
+\frac{\partial Q}{\partial t}+u\frac{\partial Q}{\partial x} &= \frac{Q_s - Q}{E_r}	\tag{modified B\&F PDE} \\
+Q_s &= \frac{M_\text{liquid}}{M_\text{air}}\frac{e_s}{P-e_s}				\tag{magic air equation} \\
+e_s &= \beta e^{\gamma\frac{T-T_0}{T+\zeta}}						\tag{Tetens formula}
+\end{align*}
+
+\section{Numerical solution}
+The PDE is solved treating the evaporation and advection as separate processes.
+\begin{align*}
+Q'_i &= Q_i + \Delta t\frac{Q_{s,i} - Q_i}{E_r} \\
+&= \left(1-\frac{\Delta t}{E_r}\right)Q_i + \frac{\Delta t}{E_r}Q_{s,i} \\
+Q''_i &= Q'_i + c\left(Q'_i - Q'_{i-1}\right) \\
+&= \left(1+c\right)Q'_i -cQ'_{i-1} \\
+&= \left(1+c\right)\left(1-\frac{\Delta t}{E_r}\right)Q_i - c\left(1-\frac{\Delta t}{E_r}\right)Q_{i-1}
+	+ \left(1+c\right)\frac{\Delta t}{E_r}Q_{s,i} - c\frac{\Delta t}{E_r}Q_{s,i-1}
+\end{align*}
+Conveniently, within a certain range, we can closely approximate $Q_s$ as a simple exponential function of $T$ within some range $\left[T_{min},T_{max}\right]$:
+\begin{align*}
+Q_s &\approx \alpha e^{\beta T} \\
+\beta &= \frac{1}{T_{max}-T_{min}}\log\left(\frac{Q_s|_{T=T_{max}}}{Q_s|_{T=T_{min}}}\right) \\
+\alpha &= e^{-\beta T_{max}}Q_s|_{T=T_{max}}
+\end{align*}
+With the square temperature field, we then have
+\begin{align*}
+T_i &= \left.\begin{cases}
+	T_{max} & \text{: } L/3\Delta x<i<2L/3\Delta x \\
+	T_{min} & \text{~}
+\end{cases}\right\}
+\end{align*}
+Fourier analysis then gives us
+\begin{align*}
+\epsilon''_i &= \left(1+c\right)\left(1-\frac{\Delta t}{E_r}\right)\epsilon_i - c\left(1-\frac{\Delta t}{E_r}\right)\epsilon_{i-1}
+	+ \left(1+c\right)\frac{\Delta t}{E_r}\alpha e^{\beta T_i} - c\frac{\Delta t}{E_r}\alpha e^{\beta T_{i-1}} \\
+e^{At}e^{ikx}e^{A\Delta t} &= \left(1+c\right)\left(1-\frac{\Delta t}{E_r}\right)e^{At}e^{ikx}
+	-c\left(1-\frac{\Delta t}{E_r}\right)e^{At}e^{ikx}e^{-ik\Delta x}
+	+\left(1+c\right)\frac{\Delta t}{E_r}\alpha e^{\beta T_m}
+	-c\frac{\Delta t}{E_r}\alpha e^{\beta T_{m-1}} \\
+e^{A\Delta t} &= \left(1+c\right)\left(1-\frac{\Delta t}{E_r}\right)
+	-c\left(1-\frac{\Delta t}{E_r}\right)e^{-ik\Delta x}
+	+e^{-At}e^{-ikx}\left(\left(1+c\right)\frac{\Delta t}{E_r}\alpha e^{\beta T_m}
+	-c\frac{\Delta t}{E_r}\alpha e^{\beta T_{m-1}}\right)
+\end{align*}
+
+\begin{align*}
+& e^{-At}e^{-ikx}\left(\left(1+c\right)\frac{\Delta t}{E_r}\alpha e^{\beta T_m}-c\frac{\Delta t}{E_r}\alpha e^{\beta T_{m-1}}\right) \\
+&= \left(1+c\right)\frac{\Delta t}{E_r}\alpha e^{\beta T_m}e^{-ikx}
+	-c\frac{\Delta t}{E_r}\alpha e^{\beta T_{m-1}}e^{-ikx} \\
+&= \alpha\frac{\Delta t}{E_r}e^{-ikx}\left(e^{\beta T_m}+c\left(e^{\beta T_m}-e^{\beta T_{m-1}}\right)\right)
+\end{align*}
+
+\end{document}

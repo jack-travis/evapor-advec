@@ -1,0 +1,91 @@
+\documentclass[12pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{varwidth}
+\usepackage{float}			%[H] for "exactly here"
+\usepackage{amsfonts}		%Standard maths
+\usepackage{amsmath}		%Standard maths
+\usepackage{amssymb}		%Standard maths
+\usepackage{caption}
+\usepackage{listings}
+
+\captionsetup[figure]{font=footnotesize}
+\linespread{1.3}		%1.5 spacing
+\lstset{language=Python,breaklines}		%,showtabs=true,tab=\rightarrowfill
+
+\begin{document}
+
+\section{PDE}
+
+Here $r_v$, $r_{vs}$ will be rewritten as $Q$, $q_s$ for the convenience of putting index subscripts on them. The imaginary unit $i$ is written as $j$ for the same reason.
+
+\begin{align*}
+Q_i' &= Q_i + \frac{q_{s|i} - Q_i}{\tau}				\tag{$\tau$ constant} \\
+Q_i'' &= Q_i' - c\left(Q_i' - Q_{i-1}'\right)			\tag{$c = u\Delta t/\Delta x$} \\
+q_{s|i} &= b\frac{p_{s|i}}{P - p_{s|i}}				\tag{$b = M_l/M_a$; $P$ constant} \\
+p_{s|i} &= \alpha e^{\frac{\beta T_i}{T_i + \gamma}}	\tag{$\alpha$, $\beta$, $\gamma$ constant}
+\end{align*}
+
+\section{Analysis}
+
+\begin{align*}
+Q_i' &= Q_i + \frac{q_{s|i} - Q_i}{\tau} \\
+&= \left(1 - \frac{1}{\tau}\right)Q_i + \frac{q_{s|i}}{\tau} \\
+Q_i'' &= Q_i' - c\left(Q_i' - Q_{i-1}'\right) \\
+&= \left(1-c\right)Q_i' - cQ_{i-1}' \\
+&= \left(1-c\right)\left(1 - \frac{1}{\tau}\right)Q_i + \left(1-c\right)\frac{q_{s|i}}{\tau}
+	-c\left(1 - \frac{1}{\tau}\right)Q_{i-1} -c\frac{q_{s|i-1}}{\tau} \\
+&= \left(1-\frac{1}{\tau}\right)\left((1-c)Q_i -cQ_{i-1}\right)
+	+\frac{1}{\tau}\left((1-c)q_{s|i}-cq_{s|i-1}\right)
+\end{align*}
+Assume that the error $\epsilon$ of the numerical solution is itself a solution:
+\begin{align*}
+\epsilon\left(x,t\right)&=\sum_{m=1}^{L/\Delta x}\left(e^{At}e^{ikx}\right)
+	\text{\quad where\quad} k=\frac{\pi m}{L} \\
+\epsilon_i'' &= \left(1-\frac{1}{\tau}\right)\left(\epsilon_i -c\left(\epsilon_i-\epsilon_{i-1}\right)\right)
+	+\frac{1}{\tau}\left(q_{s|i}-c\left(q_{s|i}-q_{s|i-1}\right)\right) \\
+e^{A\left(t+\Delta t\right)}e^{jkx}
+	&= \left(1-\frac{1}{\tau}\right)\left(e^{At}e^{jkx}
+			-c\left(e^{At}e^{jkx}-e^{At}e^{jk\left(x-\Delta x\right)}\right)\right)
+		+\frac{1}{\tau}\left(q_{s|i}-c\Delta q_{s|i}\right) \\
+e^{At}e^{A\Delta t}e^{jkx}
+	&= \left(1-\frac{1}{\tau}\right)\left(e^{At}e^{jkx}
+			-ce^{At}e^{jkx}+ce^{At}e^{jkx}e^{-jk\Delta x}\right)
+		+\frac{1}{\tau}\left(q_{s|i}-c\Delta q_{s|i}\right) \\
+e^{A\Delta t} &= \left(1-\frac{1}{\tau}\right)\left(1-c+ce^{-jk\Delta x}\right)
+		+\frac{1}{\tau}\left(q_{s|i}-c\Delta q_{s|i}\right)e^{-At}e^{-jkx}
+\end{align*}
+Since $e^{-At}$ must tend to $0$ with increasing $t$, we can ignore that component.
+\begin{align*}
+G &= \left(1-\frac{1}{\tau}\right)\left(1-c+ce^{-jk\Delta x}\right) \\
+&= \left(1-\frac{1}{\tau}\right)\left(1-c+c\left(\cos{k\Delta x}-i\sin{k\Delta x}\right)\right) \\
+G^* &= \left(1-\frac{1}{\tau}\right)\left(1-c+c\left(\cos{k\Delta x}+i\sin{k\Delta x}\right)\right) \\
+|G|^2=GG^*&=\left(1-\frac{1}{\tau}\right)^2\left(1
+		+2c\left(\cos{k\Delta x}-1\right)
+		+c^2\left(1-\left(i\sin{k\Delta x}\right)^2
+		-2\cos{k\Delta x}+\left(\cos{k\Delta x}\right)^2\right)\right) \\
+&=\left(1-\frac{1}{\tau}\right)^2\left(1
+		+2c\left(\cos{k\Delta x}-1\right)
+		+c^2\left(1+\sin^2{k\Delta x}+\cos^2{k\Delta x}
+		-2\cos{k\Delta x}\right)\right) \\
+&=\left(1-\frac{1}{\tau}\right)^2\left(1
+		+2c\left(\cos{k\Delta x}-1\right)
+		-2c^2\left(\cos{k\Delta x}+1\right)\right)
+\end{align*}
+Stability is ensured if
+\begin{align*}
+|G|&\leq 1 \\
+|G|^2&\leq 1 \\
+\left(1-\frac{1}{\tau}\right)^2\left(1
+		+2c\left(\cos{k\Delta x}-1\right)
+		-2c^2\left(\cos{k\Delta x}+1\right)\right)
+	&\leq 1 \\
+1-2c+2c^2+2c\cos{k\Delta x}-2c^2\cos{k\Delta x}
+	&\leq \frac{\tau^2}{\left(\tau-1\right)^2} \\
+2c-2c^2-2c[-1 \ldots 1]+2c^2[-1 \ldots 1] &\geq 1-\frac{\tau^2}{\left(\tau-1\right)^2} \\
+2\left(c-c^2\right)+2\left[c-c^2 \ldots c^2-c\right] &\geq 1-\frac{\tau^2}{\left(\tau-1\right)^2} \\
+4K\left(c-c^2\right) + \frac{\tau^2}{\left(\tau-1\right)^2} &\geq 1
+	\tag*{$\forall 0\leq K\leq 1$} \\
+\end{align*}
+
+\end{document}

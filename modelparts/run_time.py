@@ -13,7 +13,7 @@ max_u = consts["L"]/(consts["gs"]*consts["Dt"])
 
 print "Loaded, running simulations"
 
-vu = numpy.linspace(max_u,max_u*1.5,9)
+vu = numpy.linspace(max_u,max_u*1.75,9)
 for j in range(len(vu)):
     c = model_teper.core(consts,rv,rl,Tf)
     #
@@ -34,7 +34,7 @@ for j in range(len(vu)):
     pyplot.subplot(3,3,j+1)
     pyplot.title("u={0:.9f} ({1:.9f} Dx/Dt)".format(vu[j],vu[j]*c.Dt/c.Dx))
     pyplot.pcolormesh(T,X,R.transpose(),
-                      cmap="inferno",vmin=0.0,vmax=0.02)
+                      cmap="inferno",vmin=-0.01,vmax=0.1)
     print "Finished {0} of {1}".format(j+1,len(vu))
 #
 pyplot.subplots_adjust(left=0.07,bottom=0.07,

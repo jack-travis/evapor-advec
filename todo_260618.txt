@@ -1,0 +1,17 @@
+implement E as function of rv AND rl
+	E = min(rhs, rl/Dt)
+redo stability and analysis
+	? reexamine behaviour with strange rv/rl values
+	produce comparison between expected and actual stability
+
+put everything in Git
+
+email this to both
+
+print out analysis and the comparison
+email to Will instead
+email link to Git
+
+add as much as possible to writeup(s) (see CURRENT)
+
+what temp field are we using?

@@ -19,8 +19,7 @@ class core:
         self.t = 0.0
         self.initial = [0.0,0.0]
         self.rvs = Tf.copy()    #used as a dummy array
-        self.E = condens.evapor_coeff(self.Tf.mean(),self.P)
-        self.E_scale = 1.0
+        self.Er = None
     def initialise(self):
         self.Dx = self.L / self.gs
         self.t = 0.0
@@ -31,16 +30,19 @@ class core:
         #
         for i in range(self.gs):
             self.rvs[i] = condens.rvs(self.Tf[i],self.P)
-        #averaged E
-        self.E = self.E_scale * condens.evapor_coeff(self.Tf.mean(),self.P)
+        #default Er
+        if self.Er is None:
+            self.Er = self.Dt * condens.evapor_coeff(self.Tf.mean(),self.P)
     def step(self):
         if self.t <= 0.0:
             self.initialise()
         #first B&F evaporation/condensation,
         for i in range(self.gs):
-            vt = self.vapour[i]
-            self.vapour[i] += self.Dt*(self.rvs[i] - vt)/self.E
-            self.liquid[i] -= self.Dt*(self.rvs[i] - vt)/self.E
+            Dr = self.Dt*(self.rvs[i] - self.vapour[i])/self.Er
+            #apply cap
+            Dr = min(Dr, self.liquid[i])
+            self.vapour[i] += Dr
+            self.liquid[i] -= Dr
         #then FTBS advection
         v_n = self.vapour.copy()
         l_n = self.liquid.copy()

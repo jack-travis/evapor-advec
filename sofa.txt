@@ -1,0 +1,22 @@
+30/4/18
+
+The problem was described in its basic form. Various details not described were decided upon in a sensible way.
+
+The boundaries were treated as if fluid disappeared at the right edge of the domain and was spontaneously created at the left edge. The properties of the fluid coming in were assumed to be the same as the fluid upon the left edge at the initial timestep, taking this as a "nice" set of properties. In future, maybe incoming fluid varying over time could be used somehow.
+
+The model was designed handling E (the evaporation/condensation rate) as originally described, being unvarying in time but varying in space, and being sufficiently large as to completely evaporate or condensate all the moisture within 2 timesteps, i.e. being equal in magnitude to 1/(2*Dt) [since d.vapour[due to E] = d.t * E]. It is yet to be determined as to whether this is a sensible value.
+In the example problem, E is set to be equal to negative across the domain, except in the middle third of the domain where it is positive, with a hard step between these regions (sudden change between evapor/condens).
+Initially, the model took E to be 0 in the case that not enough liquid/vapour is present for the expected evaporation/condensation to occur. This is unrealistic, as evaporation/condensation would still be expected to occur to a lessened extent. Handling this properly is the next item expected to be worked on.
+
+The units of the model were generally taken to be either dimensionless/dedimensionalised or irrelevant, e.g. the size of the domain was taken to be 1. It must be noted that currently the timestep is rather equal to 0.1, though this may be altered. Currently also a gridsize of 90 cells is being used, in order for it to be divisible by 3 (see initial conditions of E above).
+
+The model was implemented with an FTBS scheme. Since this was shown to produce large errors in advection at the evaporation/condensation interface, replacement with a scheme of a higher order of accuracy in space would be ideal.
+Initial testing (following the model finishing basic development) showed that unsatisfactory errors will occur at the evaporation/condensation interface for sufficiently large values for the background velocity (larger than roughly u=0.8*Dx/Dt). Since such a value for u is quite large anyway, we might not have to care much for this problem.
+Initial testing was considered complete once the model produced more-or-less correct results for advection without evaporation/condensation (under initial conditions otherwise believed to be sensible) and vice versa. The model went through several iterations before this occured.
+
+NEXT STEPS:
+1. Implement a more accurate advection scheme (you already mentioned this)
+2. Always report what Courant number is used
+3. Limit the evaporation and condensation so that you never evaporate more liquid in one time-step than is available and so that you never condense more vapour than is available in one time-step.
+4. Start to read the Bryan and Fritsch paper.
+5. Use a .gitignore file so that git doesn't suggest that you add .png files to your repository.

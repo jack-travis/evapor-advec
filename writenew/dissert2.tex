@@ -1,0 +1,92 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{varwidth}
+\usepackage{float}			%[H] for "exactly here"
+\usepackage{amsfonts}		%Standard maths
+\usepackage{amsmath}		%Standard maths
+\usepackage{amssymb}		%Standard maths
+\usepackage{caption}
+\usepackage{listings}
+
+\captionsetup[figure]{font=footnotesize}
+\linespread{1.3}		%1.5 spacing
+\lstset{language=Python,breaklines}		%,showtabs=true,tab=\rightarrowfill
+
+\begin{document}
+
+\thispagestyle{empty}
+\title{UNIVERSITY OF READING\\
+~\\
+Department of Meteorology\\
+~\\
+On the Representation of Evaporation and Condensation in Weather Models}
+\author{Jack Travis}
+\maketitle
+
+%declaration here
+
+\section{Abstract}
+The main subject is to investigate how evaporation and condensation may behave under advection in a weather model. Of interest are extreme cases, where a large amount of evaporation or condensation occurs over a short time/space interval, as in air being advected through a front. In such cases, models may predict more fluid undergoing evaporation or condensation than there is liquid or vapour available to evaporate or condense, leading to invalid values for fluid properties, possibly including instability. The primary subject is to examine and compare different methods of preventing adverse effects from occurring.
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+\subsection{Motivation}
+The topic of this work is the handling of evaporation and condensation (considered as a single process) in weather models: in particular, how a sudden state change of a large amount of fluid, e.g. in passing through a front, can in models cause instability and/or irreal values for physical properties to arise. \\
+Ideally it would like to be understood what conditions result in instability, so that changes in how evaporation and condensation are represented in models can be recommended to prevent such issues occuring.
+
+\subsection{Problem description}
+For the sake of study, an example problem has been constructed in which fluid moves continuously through a region of varying temperature, thus variously evaporating and condensing. In this example problem, the space is one-dimensional in representation, and most properties (air density, air pressure, background fluid velocity) are assumed to be approximately even over the domain. The only property that varies over the space is temperature. \\
+Based on an equation taken from Brian \& Fritsch (ADD REFERENCE), evaporation and condensation are taken to be controlled by the formula
+\begin{equation} \label{eq:1}
+\frac{\partial r_v}{\partial t}|_{\text{cond}}=\frac{r_{vs} - r_v}{E_r}
+\end{equation}
+for a constant evaporation/condensation timescale $E_r$, where $r_v$ is the concentration of water vapour and $r_{vs}$ is the saturation mixing ratio. It is $r_{vs}$ which is dependent on $T$ (using a Tetens formula in the implementation), and thus varies over the domain. \\
+Furthermore, it is unrealistic to allow evaporation if there is no liquid water remaining in the system, and vice versa. Consequently, in implementation the change in fluid concentrations due to evaporation or condensation at each timestep is actually taken to be
+\begin{equation} \label{eq:2}
+\Delta r_v|_{\text{cond}} = \min\left(\Delta t\frac{r_{vs} - r_v}{E_r},r_l\right)
+\end{equation}
+where $r_l$ is the concentration of liquid water. Because of this dependence on $r_{vs}-r_v$, the steady state with respect to evaporation/condensation is where $r_{vs}=r_v$ (regardless of the value for $r_l$). \\
+In addition to the evaporation and condensation that occur, advection also occurs to move the fluid across the space at a steady rate $u$. It is assumed that since the fluid moves unidirectionally across the space from one side to the other, we can have the fluid being spontaneously created on the source side and destroyed on the other. For the implementation, it is assumed that the fluid off the left edge of the grid has the same temperature (and so $r_vs$) of the leftmost cell on the grid, and so has
+\begin{align}
+r_{v,-1} &= r_{vs,0} \label{eq:a} \\
+r_{l,-1} &= r_{v,0}+r_{l,0}-r_{vs,0} \label{eq:b}
+\end{align}
+such that it is in a steady state (as aforementioned) and has the same $r_v+r_l$ as the leftmost cell. \\
+Between the evaporation/condensation (as per equation \ref{eq:1}) and the advection, and ignoring the limitation described in equation \ref{eq:2}, we can now produce the PDE
+\[
+\frac{\text{D} r_v}{\text{D} t}=\frac{\partial r_v}{\partial t}|_{\text{cond}}
+\]
+thus
+\begin{equation} \label{eq:3}
+\frac{\partial r_v}{\partial t}+u\frac{\partial r_v}{\partial x}=\frac{r_{vs} - r_v}{E_r}
+\end{equation}
+In implementation, for simplicity FTBS was used to represent the advection process. Note however that since the advection and evaporation/condensation processes can interact with one another in complex ways, it is a vast simplification to keep them as separate operations, thus giving us such relations as
+\begin{align} \label{eq:4}
+r'_{v,i} &= r_{v,i} + \min\left(\Delta t\frac{r_{vs,i} - r_{v,i}}{E_r},r_{l,i}\right) \\ \label{eq:5}
+r''_{v,i} &= r'_{v,i} - c\left(r'_{v,i} - r'_{v,i-1}\right)
+\end{align}
+and likewise for $r_l$
+\begin{align} \label{eq:6}
+r'_{l,i} &= r_{l,i} - \min\left(\Delta t\frac{r_{vs,i} - r_{v,i}}{E_r},r_{l,i}\right) \\ \label{eq:7}
+r''_{l,i} &= r'_{l,i} - c\left(r'_{l,i} - r'_{l,i-1}\right)
+\end{align}
+where $c=u \Delta t/\Delta x$ is the Courant number. \\
+The concern now is how the behaviour of this model varies depending on $E_r$ and $c$. For simplicity, $\Delta t$ and $\Delta x$ will be kept constant, such that only $u$ will be varied of the components of $c$.
+
+\section{Numerical analysis}
+Let us temporarily ignore $r_l$ and focus only on $r_v$. By approximating $r_{vs}$ as even over the domain, we can use $S=r_v-r_{vs}$ to rewrite equations \ref{eq:4}, \ref{eq:5}, \ref{eq:6} and \ref{eq:7} as
+\begin{align}
+S'_i &= S_i + \Delta t\frac{S_i}{E_r}		\nonumber \\
+S'_i &= \left(1+\frac{\Delta t}{E_r}\right)S_i	\nonumber \\
+S''_i &= S'_i - c\left(S'_i - S'_{i-1}\right)		\nonumber \\
+S''_i &= \left(1-c\right)S'_i - cS'_{i-1}		\nonumber \\
+S''_i &= \left(1-c\right)\left(1+\frac{\Delta t}{E_r}\right)S_i - c\left(1+\frac{\Delta t}{E_r}\right)S_{i-1}	\label{eq:9}
+\end{align}
+
+\end{document}

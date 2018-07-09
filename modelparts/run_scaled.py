@@ -9,36 +9,39 @@ rl = numpy.load("liquid_init.npy")
 
 import model_scaled
 
-max_u = consts["L"]/(consts["gs"]*consts["Dt"])
-
 print "Loaded, running simulations"
+
+import condens
+Er_mean = consts["Dt"] * condens.evapor_coeff(Tf.mean(),consts["P"])
 
 C_left = 0.0
 C_right = 2.0
-TS_left = 0.0
-TS_right = 0.2
+Er_left = 0.0
+Er_right = Er_mean
 
-duration = 50.0
+duration = 25.0
 
-u_size = 100
-es_size = int(u_size * 10 * (TS_right-TS_left)/(C_right-C_left))
+C_size = 20
+Er_size = int(C_size * 10 * (Er_right-Er_left)/(C_right-C_left))
 
 steps = int(duration / consts["Dt"])
 print "To do: {0} by {1} by {2} = {3}".format(
-    steps,u_size,es_size,steps*u_size*es_size)
+    steps,C_size,Er_size,steps*C_size*Er_size)
 
-C_range = numpy.linspace(C_left,C_right,u_size)
-TS_range = numpy.linspace(TS_left,TS_right,es_size+1)[1:]
+C_range = numpy.linspace(C_left,C_right,C_size)
+Er_range = numpy.linspace(Er_left,Er_right,Er_size+1)[1:]
 
-energy = numpy.zeros((u_size,es_size))
+middle_C = (consts["L"]/consts["gs"])/consts["Dt"]
+u_range = [xc * middle_C for xc in C_range]
 
-for j in range(es_size):
-    for i in range(u_size):
+energy = numpy.zeros((C_size,Er_size))
+
+for j in range(Er_size):
+    for i in range(C_size):
         c = model_scaled.core(consts,rv,rl,Tf)
         #
-        c.u = C_range[i] * c.Dx / c.Dt
-        es = TS_range[j] / c.E
-        c.E_scale = es
+        c.u = u_range[i]
+        c.Er = Er_range[j]
         #
         energy_init = (c.vapour ** 2).sum() + (c.liquid ** 2).sum()
         c.run(duration)
@@ -51,12 +54,13 @@ for j in range(es_size):
         energy_a = (vap_a ** 2).sum() + (liq_a ** 2).sum()
         energy_b = (vap_b ** 2).sum() + (liq_b ** 2).sum()
         energy[i,j] = (energy_b - energy_a) / energy_init
-    print "Did {0:.2f}%".format(100.*(j+1)/es_size)
+    print "Did {0:.2f}%".format(100.*(j+1)/Er_size)
 
-RTS,RC = numpy.meshgrid(TS_range,C_range)
+REr,Ru = numpy.meshgrid(Er_range,u_range)
 ennan = numpy.ma.masked_where(numpy.isnan(energy),energy)
-pyplot.pcolor(RTS,RC,ennan,vmin=-0.1,vmax=0.1)
+pyplot.pcolor(REr,Ru,ennan,vmin=-5.0,vmax=5.0)
 pyplot.colorbar()
-pyplot.xlabel("Condensation timescale")
-pyplot.ylabel("Advection courant number")
+pyplot.title("Change in kinetic energy between timesteps {0}~{1}".format(steps,steps+1))
+pyplot.xlabel("$E_r$")
+pyplot.ylabel("$u$")
 pyplot.show(block=False)

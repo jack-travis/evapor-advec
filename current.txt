@@ -1,0 +1,32 @@
+find way of making evaporation depend on total moisture (rv AND rl)
+look up dr_cond?
+
+		[[[replace total variation measure with kinetic energy]]]
+
+filenames and arrangement
+
+reanalyse model's stability
+
+
+
+mention initial state
+mention variable names and definitions
+state equations in problem desc
+mathematical variable names
+mention finite difference scheme
+
+state B&F cond equation
+justify
+explain implementation
+
+change equations and redo analysis
+numerical stability of evapor/cond
+stability of whole equation
+describe C>1 errors based on this
+evapor/cond suppresses oscillations if u is small
+look for boundary
+merge into main document and detailify
+
+add various references for equations used
+
+[listing] model parts in writeup

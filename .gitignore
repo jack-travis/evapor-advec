@@ -1,12 +1,5 @@
-#python compiled items
 *.pyc
-
-#latex file associated items
-.png
-
-#latex files
-.tex
-.pdf
-.log
-.aux
-.toc
+*.log
+*.aux
+*.toc
+*.synctex.gz

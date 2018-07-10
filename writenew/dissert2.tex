@@ -80,13 +80,67 @@ where $c=u \Delta t/\Delta x$ is the Courant number. \\
 The concern now is how the behaviour of this model varies depending on $E_r$ and $c$. For simplicity, $\Delta t$ and $\Delta x$ will be kept constant, such that only $u$ will be varied of the components of $c$.
 
 \section{Numerical analysis}
+We can now perform numerical analysis upon the PDE in an attempt to predict its stability. \\
 Let us temporarily ignore $r_l$ and focus only on $r_v$. By approximating $r_{vs}$ as even over the domain, we can use $S=r_v-r_{vs}$ to rewrite equations \ref{eq:4}, \ref{eq:5}, \ref{eq:6} and \ref{eq:7} as
 \begin{align}
-S'_i &= S_i + \Delta t\frac{S_i}{E_r}		\nonumber \\
-S'_i &= \left(1+\frac{\Delta t}{E_r}\right)S_i	\nonumber \\
+S'_i &= S_i - \Delta t\frac{S_i}{E_r}		\nonumber \\
+S'_i &= \left(1-\frac{\Delta t}{E_r}\right)S_i	\nonumber \\
 S''_i &= S'_i - c\left(S'_i - S'_{i-1}\right)		\nonumber \\
-S''_i &= \left(1-c\right)S'_i - cS'_{i-1}		\nonumber \\
-S''_i &= \left(1-c\right)\left(1+\frac{\Delta t}{E_r}\right)S_i - c\left(1+\frac{\Delta t}{E_r}\right)S_{i-1}	\label{eq:9}
+S''_i &= \left(1-c\right)S'_i + cS'_{i-1}		\nonumber \\
+S''_i &= \left(1-c\right)\left(1-\frac{\Delta t}{E_r}\right)S_i + c\left(1-\frac{\Delta t}{E_r}\right)S_{i-1}	\label{eq:9}
 \end{align}
+From this, we take $\epsilon$ to be the error between the model's numerical solution to the PDE and the analytical solution, and assume that since the numerical and analytical solutions solve the PDE, $\epsilon$ must be a solution as well:
+\begin{align} \nonumber
+\epsilon''_i &= \left(1-c\right)\left(1-\frac{\Delta t}{E_r}\right)\epsilon_i + c\left(1-\frac{\Delta t}{E_r}\right)\epsilon_{i-1} \\
+\label{eq:10} \text{i.e.\quad}
+\epsilon^{t+\Delta t}_i &= \left(1-c\right)\left(1-\frac{\Delta t}{E_r}\right)\epsilon^t_i
++ c\left(1-\frac{\Delta t}{E_r}\right)\epsilon^t_{i-1}
+\end{align}
+Furthermore, let us assume that $\epsilon$ can be represented by the Fourier series
+\begin{equation} \label{eq:11}
+\epsilon = \sum_{\forall k}\left(e^{\alpha t}e^{ikx}\right)
+\end{equation}
+for some $\alpha$ and $k$ at each $\epsilon_i$, and that each individual summand is itself a solution. Substituting the summands from equation \ref{eq:11} into equation \ref{eq:10} gives us
+\begin{align*}
+e^{\alpha\left(t+\Delta t\right)}e^{ikx}
+&= \left(1-c\right)\left(1-\frac{\Delta t}{E_r}\right)e^{\alpha t}e^{ikx}
++ c\left(1-\frac{\Delta t}{E_r}\right)e^{\alpha t}e^{ik\left(x-\Delta x\right)} \\
+e^{\alpha\Delta t}
+&= \left(1-c\right)\left(1-\frac{\Delta t}{E_r}\right)
++ c\left(1-\frac{\Delta t}{E_r}\right)e^{-ik\Delta x} \\
+e^{\alpha\Delta t}
+&= \left(1-\frac{\Delta t}{E_r}\right)\left(1-c+ce^{-ik\Delta x}\right) \\
+e^{\alpha\Delta t}
+&= \left(1-\frac{\Delta t}{E_r}\right)\left(1-c+c\cos\left(k\Delta x\right)-ic\sin\left(k\Delta x\right)\right)
+\end{align*}
+In predicting the system's stability, we are interested in how $\epsilon$ grows over time, or equivalently how the summands grow. In fact the growth rate of the summands is simply
+\[
+\left|\frac{e^{\alpha\left(t+\Delta t\right)}e^{ikx}}{e^{\alpha t}e^{ikx}}\right| = \left|e^{\alpha\Delta t}\right|
+\]
+and we can ensure stability if the growth rate does not exceed $1$, thus
+\begin{align*}
+\left|e^{\alpha\Delta t}\right|&\leq 1 \\
+\left|e^{\alpha\Delta t}\right|^2&\leq 1 \\
+\left(e^{\alpha\Delta t}\right)\left(e^{\alpha\Delta t}\right)^*&\leq 1 \\
+\left(1-\frac{\Delta t}{E_r}\right)^2
+\left(1-c+c\cos\left(k\Delta x\right)-ic\sin\left(k\Delta x\right)\right) \cdot \\
+\left(1-c+c\cos\left(k\Delta x\right)+ic\sin\left(k\Delta x\right)\right)&\leq 1 \\
+\left(1-\frac{\Delta t}{E_r}\right)^2\left(1+2(c^2-c)(1-\cos(k\Delta x))\right) &\leq 1 \\
+1+2(c^2-c)(1-\cos(k\Delta x)) &\leq \frac{E_r^2}{\left(E_r-\Delta t\right)^2}	\tag{$\forall k$} \\
+1+2(c^2-c)(1-[-1,1]) &\leq \frac{E_r^2}{\left(E_r-\Delta t\right)^2} \\
+1+2(c^2-c)([0,2]) &\leq \frac{E_r^2}{\left(E_r-\Delta t\right)^2} \\
+\frac{E_r^2}{\left(E_r-\Delta t\right)^2}-1 &\geq \left[0,4(c^2-c)\right]		\tag{for all values in range}
+\end{align*}
+We could interpret the RHS of the above as $\max\left(0,c^2-c\right)$. If so, then in the case of $0\leq c<1$ we would get
+\begin{align*}
+\frac{E_r^2}{\left(E_r-\Delta t\right)^2} -1 &\geq 0 \\
+\frac{E_r^2}{\left(E_r-\Delta t\right)^2} &\geq 1 \\
+E_r^2 &\geq \left(E_r-\Delta t\right)^2 \\
+E_r^2 &\geq E_r^2 + \Delta t^2 -2E_r\Delta t \\
+0 &\geq \Delta t^2 -2E_r\Delta t \\
+2E_r\Delta t &\geq \Delta t^2 \\
+E_r &\geq \frac{\Delta t}{2}
+\end{align*}
+(In practice this has not been the case - what's wrong?)
 
 \end{document}

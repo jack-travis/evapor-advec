@@ -8,6 +8,7 @@
 \usepackage{amssymb}		%Standard maths
 \usepackage{caption}
 \usepackage{listings}
+\usepackage{natbib}
 
 \captionsetup[figure]{font=footnotesize}
 \linespread{1.3}		%1.5 spacing
@@ -24,10 +25,10 @@ On the Representation of Evaporation and Condensation in Weather Models}
 \author{Jack Travis}
 \maketitle
 
-%declaration here
-
 \section{Abstract}
 The main subject is to investigate how evaporation and condensation may behave under advection in a weather model. Of interest are extreme cases, where a large amount of evaporation or condensation occurs over a short time/space interval, as in air being advected through a front. In such cases, models may predict more fluid undergoing evaporation or condensation than there is liquid or vapour available to evaporate or condense, leading to invalid values for fluid properties, possibly including instability. The primary subject is to examine and compare different methods of preventing adverse effects from occurring.
+
+\null \vfill \centering{A dissertation submitted in partial fulfilment of the requirement for the degree of the Atmosphere Oceans and Climate course.}
 
 \newpage
 
@@ -42,7 +43,7 @@ Ideally it would like to be understood what conditions result in instability, so
 
 \subsection{Problem description}
 For the sake of study, an example problem has been constructed in which fluid moves continuously through a region of varying temperature, thus variously evaporating and condensing. In this example problem, the space is one-dimensional in representation, and most properties (air density, air pressure, background fluid velocity) are assumed to be approximately even over the domain. The only property that varies over the space is temperature. \\
-Based on an equation taken from Brian \& Fritsch (ADD REFERENCE), evaporation and condensation are taken to be controlled by the formula
+As based on an equation taken from \citet{BF2002}, evaporation and condensation are taken to be controlled by the formula
 \begin{equation} \label{eq:1}
 \frac{\partial r_v}{\partial t}|_{\text{cond}}=\frac{r_{vs} - r_v}{E_r}
 \end{equation}
@@ -142,5 +143,9 @@ E_r^2 &\geq E_r^2 + \Delta t^2 -2E_r\Delta t \\
 E_r &\geq \frac{\Delta t}{2}
 \end{align*}
 (In practice this has not been the case - what's wrong?)
+
+\newpage
+\bibliography{references}
+\bibliographystyle{plainnat}
 
 \end{document}

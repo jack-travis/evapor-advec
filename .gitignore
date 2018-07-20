@@ -3,5 +3,7 @@
 *.aux
 *.toc
 *.synctex.gz
+*.bbl
+*.blg
 *.png
 *.pdf

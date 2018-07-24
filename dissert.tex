@@ -110,8 +110,7 @@ However, using these limits did not produce significant differences in the syste
 \subsection{12/5/18}
 A certain reason for the failure of evaporation/condensation with a large background velocity was eventually found.\\
 The two processes are calculated for at the same time. Hence, thinking of the two processes as totally separate, the evaporation/condensation that should affect a given portion of liquid/vapour is not actually applied to that part of the domain until after the liquid/vapour has advected away and different fluid has advected in. With the evaporation/condensation being calculated with reference to the old fluid values but applied to the new values, this can lead to the liquid/vapour values exiting their normal ranges (between 0 and 1). The FTBS advection of these invalid fluid values is the cause of the oscillating errors described previously.\\
-The solution proposed is to separate the two processes such that evaporation/condensation occurs first, and then advection. Implementing this is the next important stage in development.\\
-legue %discuss operator splitting based on paper
+The solution proposed is to separate the two processes such that evaporation/condensation occurs first, and then advection. Implementing this is the next important stage in development.
 
 \subsection{17/5/18}
 Operator splitting has been implemented: first evaporation/condensation occurs, then advection occurs separately. Each is considered its own time operation, thus using timesteps equal to $\Delta t/2$.\\

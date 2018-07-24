@@ -26,48 +26,69 @@ On the Representation of Evaporation and Condensation in Weather Models}
 \maketitle
 
 \section{Abstract}
-The main subject is to investigate how evaporation and condensation may behave under advection in a weather model. Of interest are extreme cases, where a large amount of evaporation or condensation occurs over a short time/space interval, as in air being advected through a front. In such cases, models may predict more fluid undergoing evaporation or condensation than there is liquid or vapour available to evaporate or condense, leading to invalid values for fluid properties, possibly including instability. The primary subject is to examine and compare different methods of preventing adverse effects from occurring.
+The main subject is to investigate how evaporation and condensation may behave under advection in a weather model. Of interest are extreme cases where a large amount of evaporation or condensation occurs over a short time/space interval, such as the case of air being advected through a front. In such cases, models may predict more fluid undergoing evaporation or condensation than there is liquid or vapour available to evaporate or condense, leading to invalid values for fluid properties, possibly including instability. The primary subject is to examine and compare different methods of preventing adverse effects from occurring.
 
-\null \vfill \centering{A dissertation submitted in partial fulfilment of the requirement for the degree of the Atmosphere Oceans and Climate course.}
+\null \vfill
+A dissertation submitted in partial fulfilment of the requirement for the MSc degree of Atmosphere, Oceans and Climate.
 
 \newpage
-
 \tableofcontents
 
 \newpage
 
-\section{Introduction}
-\subsection{Motivation}
-The topic of this work is the handling of evaporation and condensation (considered as a single process) in weather models: in particular, how a sudden state change of a large amount of fluid, e.g. in passing through a front, can in models cause instability and/or irreal values for physical properties to arise. \\
-Ideally it would like to be understood what conditions result in instability, so that changes in how evaporation and condensation are represented in models can be recommended to prevent such issues occuring.
+\section{Motivation}
+The topic of this work is the handling of evaporation and condensation (considered as a single process) in weather models: in particular, how a sudden state change of a large amount of fluid, e.g. in passing through a front, can cause instability and/or unphysical values for fluid properties to arise. \\
+Ideally, we would like to be know what conditions result in instability, so that changes in how evaporation and condensation are represented in models can be recommended to prevent such issues occuring. \\
+DISCUSS METHODS DIFFERENCES
 
-\subsection{Problem description}
-For the sake of study, an example problem has been constructed in which fluid moves continuously through a region of varying temperature, thus variously evaporating and condensing. In this example problem, the space is one-dimensional in representation, and most properties (air density, air pressure, background fluid velocity) are assumed to be approximately even over the domain. The only property that varies over the space is temperature. \\
-As based on an equation taken from \citet{BF2002}, evaporation and condensation are taken to be controlled by the formula
+\section{The problem and its implementation}
+For the sake of study, an example problem has been constructed in which fluid moves continuously through a region of varying temperature, thus variously evaporating and condensing. In this example problem, the space is one-dimensional in representation, given for convenience a size of $1$ arbitrary space unit. In implementation, the space is subdivided into 90 spatial cells (thus $\Delta x=1/90$ arbitrary space units), with that number being chosen for the convenience of dividing it into three sections of differing properties, as described below. \\
+The model in implementation always used a timestep of $\Delta t=0.1$ arbitrary time units. Originally this was because it was necessary to have a small timestep in order for the model to be able to run normally under the exemplar parameter values that were being used during model development; subsequently, the same timestep was used for all simulations for consistency. \\
+Such fluid properties as air density, air pressure and background fluid velocity are assumed to be approximately even over the domain, as would be generally expected for fluid advection in the horizontal; the only property that varies over the space is temperature. The exact temperature field used by the model was varied experimentally, but most commonly were used a basic ``square'' temperature field and a (marginally) more realistic sloped field, as seen in figure \ref{fig:tempfields} below.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{tempfields.png}
+\caption{The two temperature fields that were generally used in runs of the model. The horizontal axis is in arbitrary space units, while the vertical axis is in Kelvins; the upper and lower temperatures are respectively $20^{\circ}$C and $10^{\circ}$C.}
+\label{fig:tempfields}
+\end{figure}
+Both temperature fields are tripartite, having a warmer region of evaporation surrounded by a cooler region of condensation. This roughly simulates the example situation of fluid advecting through a front. \\
+
+As based on an formula taken from \citet[p.~2920]{BF2002} apud \citet{RH1983}, evaporation and condensation are taken to be controlled by the following equation for the concentration of water vapour $r_v$ (and with a similar equation existing for the liquid water concentration $r_l$),
 \begin{equation} \label{eq:1}
 \frac{\partial r_v}{\partial t}|_{\text{cond}}=\frac{r_{vs} - r_v}{E_r}
 \end{equation}
-for a constant evaporation/condensation timescale $E_r$, where $r_v$ is the concentration of water vapour and $r_{vs}$ is the saturation mixing ratio. It is $r_{vs}$ which is dependent on $T$ (using a Tetens formula in the implementation), and thus varies over the domain. \\
-Furthermore, it is unrealistic to allow evaporation if there is no liquid water remaining in the system, and vice versa. Consequently, in implementation the change in fluid concentrations due to evaporation or condensation at each timestep is actually taken to be
+for a constant evaporation/condensation timescale $E_r$, where $r_{vs}$ is the saturation mixing ratio. \\
+From the original form of equation \ref{eq:1}, the part of the calculation based on $E_r$ differs in two ways. Firstly, it was originally multiplied by a $\Delta t$ component, such that $\Delta r_v|_{\text{cond}}$ (the change in $r_v$ due to $E_r$ at each timestep) would not be dependent on $\Delta t$: this was done to make stability of the system easier to guarantee, but for the rate to not vary with timescale is unrealistic, and so here the $\Delta t$ component has been removed. Secondly, $E_r$ is taken in the original source to vary in temperature: since that would here mean varying $E_r$ over the domain, it has instead taken to be constant for this implementation (using by default the average temperature over the domain, though the value was varied experimentally). \\
+It is $r_{vs}$ which is dependent on $T$, and thus varies over the domain. In the implementation, $r_vs$ is taken to vary with $T$ based on
+\begin{align}
+e_s &= \begin{cases}
+0.61078 e^{\frac{21.875T}{T+265.5}} & \text{: $T<0^{\circ}$C} \\
+0.61078 e^{\frac{17.27T}{T+237.3}} &
+\end{cases} \label{eq:tetens} \\
+r_{vs} &= B\frac{e_s}{P-e_s} \label{eq:magic}
+\end{align}
+using $T$ in degrees Celsius, where $P$ is pressure and $B\approx0.62186$ is the ratio of the molar masses of water and air. \\
+We note that it is unrealistic to allow evaporation if there is no liquid water remaining in the system, and vice versa. Consequently, on the contrary to equation \ref{eq:1}, in implementation the change in fluid concentrations due to evaporation or condensation at each timestep is actually taken to be
 \begin{equation} \label{eq:2}
 \Delta r_v|_{\text{cond}} = \min\left(\Delta t\frac{r_{vs} - r_v}{E_r},r_l\right)
 \end{equation}
-where $r_l$ is the concentration of liquid water. Because of this dependence on $r_{vs}-r_v$, the steady state with respect to evaporation/condensation is where $r_{vs}=r_v$ (regardless of the value for $r_l$). \\
-In addition to the evaporation and condensation that occur, advection also occurs to move the fluid across the space at a steady rate $u$. It is assumed that since the fluid moves unidirectionally across the space from one side to the other, we can have the fluid being spontaneously created on the source side and destroyed on the other. For the implementation, it is assumed that the fluid off the left edge of the grid has the same temperature (and so $r_vs$) of the leftmost cell on the grid, and so has
+Because of this dependence on $r_{vs}-r_v$, the steady state with respect to evaporation/condensation is where $r_{vs}=r_v$ (regardless of the value for $r_l$). \\
+In addition to the evaporation and condensation that occur, advection also occurs to move the fluid across the space at a steady rate $u$ (taken for convenience to be positive). It is assumed that since the fluid moves unidirectionally across the space from one side to the other, we can have the fluid being spontaneously created on the source side and destroyed on the other. For the implementation, it is assumed that the fluid off the left edge of the grid has the same temperature (and so $r_{vs}$) of the leftmost cell on the grid, and so has
 \begin{align}
 r_{v,-1} &= r_{vs,0} \label{eq:a} \\
 r_{l,-1} &= r_{v,0}+r_{l,0}-r_{vs,0} \label{eq:b}
 \end{align}
-such that it is in a steady state (as aforementioned) and has the same $r_v+r_l$ as the leftmost cell. \\
+such that it is in a steady state (as aforementioned in the context of equation \ref{eq:2}) and has the same $r_v+r_l$ as the leftmost cell. \\
 Between the evaporation/condensation (as per equation \ref{eq:1}) and the advection, and ignoring the limitation described in equation \ref{eq:2}, we can now produce the PDE
 \[
 \frac{\text{D} r_v}{\text{D} t}=\frac{\partial r_v}{\partial t}|_{\text{cond}}
 \]
 thus
-\begin{equation} \label{eq:3}
-\frac{\partial r_v}{\partial t}+u\frac{\partial r_v}{\partial x}=\frac{r_{vs} - r_v}{E_r}
+\begin{equation}
+\frac{\partial r_v}{\partial t}+u\frac{\partial r_v}{\partial x}=\frac{r_{vs} - r_v}{E_r} \label{eq:3}
 \end{equation}
-In implementation, for simplicity FTBS was used to represent the advection process. Note however that since the advection and evaporation/condensation processes can interact with one another in complex ways, it is a vast simplification to keep them as separate operations, thus giving us such relations as
+where the LHS is the advection as a material derivative, and the RHS is the evaporation/condensation as a sink/source term. \\
+For simplicity, here the advection process is represented by an FTBS finite difference method. Note however that since the advection and evaporation/condensation processes can interact with one another in complex ways; thus, in order to be able the better to achieve stability, it is best to keep the two operations separate, thus giving us such relations as
 \begin{align} \label{eq:4}
 r'_{v,i} &= r_{v,i} + \min\left(\Delta t\frac{r_{vs,i} - r_{v,i}}{E_r},r_{l,i}\right) \\ \label{eq:5}
 r''_{v,i} &= r'_{v,i} - c\left(r'_{v,i} - r'_{v,i-1}\right)
@@ -77,12 +98,12 @@ and likewise for $r_l$
 r'_{l,i} &= r_{l,i} - \min\left(\Delta t\frac{r_{vs,i} - r_{v,i}}{E_r},r_{l,i}\right) \\ \label{eq:7}
 r''_{l,i} &= r'_{l,i} - c\left(r'_{l,i} - r'_{l,i-1}\right)
 \end{align}
-where $c=u \Delta t/\Delta x$ is the Courant number. \\
-The concern now is how the behaviour of this model varies depending on $E_r$ and $c$. For simplicity, $\Delta t$ and $\Delta x$ will be kept constant, such that only $u$ will be varied of the components of $c$.
+where $r'$ and $r''$ represent operation-intermediate values, $i$ is a spatial index value, and $c=u \Delta t/\Delta x$ is the Courant number. \\
+The concern now is how the behaviour of this model varies depending on $E_r$ and $c$. For simplicity, $\Delta t$ and $\Delta x$ are kept constant such that $u$ is the only component of $c$ that is varied.
 
-\section{Numerical analysis}
+\section{Numerical analysis of the system}
 We can now perform numerical analysis upon the PDE in an attempt to predict its stability. \\
-Let us temporarily ignore $r_l$ and focus only on $r_v$. By approximating $r_{vs}$ as even over the domain, we can use $S=r_v-r_{vs}$ to rewrite equations \ref{eq:4}, \ref{eq:5}, \ref{eq:6} and \ref{eq:7} as
+Let us temporarily ignore $r_l$ and focus only on $r_v$. By approximating $r_{vs}$ as uniform over the domain, we can use $S=r_v-r_{vs}$ to rewrite equations \ref{eq:4}, \ref{eq:5}, \ref{eq:6} and \ref{eq:7} as
 \begin{align}
 S'_i &= S_i - \Delta t\frac{S_i}{E_r}		\nonumber \\
 S'_i &= \left(1-\frac{\Delta t}{E_r}\right)S_i	\nonumber \\
@@ -130,19 +151,23 @@ and we can ensure stability if the growth rate does not exceed $1$, thus
 1+2(c^2-c)(1-\cos(k\Delta x)) &\leq \frac{E_r^2}{\left(E_r-\Delta t\right)^2}	\tag{$\forall k$} \\
 1+2(c^2-c)(1-[-1,1]) &\leq \frac{E_r^2}{\left(E_r-\Delta t\right)^2} \\
 1+2(c^2-c)([0,2]) &\leq \frac{E_r^2}{\left(E_r-\Delta t\right)^2} \\
-\frac{E_r^2}{\left(E_r-\Delta t\right)^2}-1 &\geq \left[0,4(c^2-c)\right]		\tag{for all values in range}
+\frac{E_r^2}{\left(E_r-\Delta t\right)^2}-1 &\geq 4K(c^2-c)		\tag{$\forall K\in[0,1]$}
 \end{align*}
-We could interpret the RHS of the above as $\max\left(0,c^2-c\right)$. If so, then in the case of $0\leq c<1$ we would get
+We can reinterpret this stability condition more helpfully as $\frac{E_r^2}{\left(E_r-\Delta t\right)^2}-1\geq\max\left(0,4(c^2-c)\right)$; this tells us for instance that for $c<1$ (and so $0>c^2-c$), the minimum $E_r$ for which stability is guaranteed is given by
 \begin{align*}
-\frac{E_r^2}{\left(E_r-\Delta t\right)^2} -1 &\geq 0 \\
+\frac{E_r^2}{\left(E_r-\Delta t\right)^2}-1&\geq 0 \\
 \frac{E_r^2}{\left(E_r-\Delta t\right)^2} &\geq 1 \\
-E_r^2 &\geq \left(E_r-\Delta t\right)^2 \\
-E_r^2 &\geq E_r^2 + \Delta t^2 -2E_r\Delta t \\
-0 &\geq \Delta t^2 -2E_r\Delta t \\
+E_r^2 &\geq E_r^2 - 2E_r\Delta t + \Delta t^2 \\
 2E_r\Delta t &\geq \Delta t^2 \\
 E_r &\geq \frac{\Delta t}{2}
 \end{align*}
-(In practice this has not been the case - what's wrong?)
+In general, we can produce a plot of predicted stability for the system, based on the values of $K$ for which the stability condition holds for given $c$ and $E_r$ values. Such a plot can be seen as figure \ref{fig:stability_pred} below.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{stability_pred.png}
+\caption{A plot of the stability of the system as predicted by the analysis above. The colour scale indicates the proportion of values for $K\in[0,1]$ for which the stability condition holds; e.g. in the yellow region, where the proportion is $1$, stability is guaranteed.}
+\label{fig:stability_pred}
+\end{figure}
 
 \newpage
 \bibliography{references}

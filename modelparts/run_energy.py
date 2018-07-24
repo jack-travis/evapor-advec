@@ -13,15 +13,15 @@ max_u = consts["L"]/(consts["gs"]*consts["Dt"])
 
 print "Loaded, running simulations"
 
-duration = 30.0
-C = 1.0
-Er = 0.04
+duration = 100.0
+C = 0.5
+Er = 0.05
 
 c = model_scaled.core(consts,rv,rl,Tf)
 #
 c.u = C * c.Dx / c.Dt
-es = Er / c.E
-c.E_scale = es
+c.initialise()
+c.Er = Er
 #
 energy_init = (c.vapour ** 2).sum() + (c.liquid ** 2).sum()
 energy_prev = energy_init
@@ -37,5 +37,5 @@ for _ in range(steps):
     energy_prev = energy_now
 #
 pyplot.plot(T,Echr)
-pyplot.ylim([-5,5])
+#pyplot.ylim([-5,5])
 pyplot.show(block=False)

@@ -80,7 +80,7 @@ e_s &= \begin{cases}
 \end{cases} \label{eq:tetens} \\
 r_{vs} &= B\frac{e_s}{P-e_s} \label{eq:magic}
 \end{align}
-using $T$ in degrees Celsius, where $P$ is pressure and $B\approx0.62186$ is the ratio of the molar masses of water and air. \\
+using $T$ in degrees Celsius, where $P$ is pressure and $B\approx0.62186$ is the ratio of the molar masses of water and air. (DO I NEED TO CITE SOMETHING THAT EXPLAINS MAGIC?) \\
 We note that it is unrealistic to allow evaporation if there is no liquid water remaining in the system, and vice versa. Consequently, on the contrary to equation \ref{eq:1}, in implementation the change in fluid concentrations due to evaporation or condensation at each timestep is actually taken to be
 \begin{equation} \label{eq:2}
 \Delta r_v|_{\text{cond}} = \min\left(\Delta t\frac{r_{vs} - r_v}{E_r},r_l\right)
@@ -144,34 +144,63 @@ In predicting the system's stability, we are interested in how $\epsilon$ grows 
 \left|\frac{e^{\alpha\left(t+\Delta t\right)}e^{ikx}}{e^{\alpha t}e^{ikx}}\right| = \left|e^{\alpha\Delta t}\right|
 \]
 and we can ensure stability if the growth rate does not exceed $1$, thus
-\begin{align*}
+\begin{align}
 \left|e^{\alpha\Delta t}\right|\leq 1 \Leftrightarrow
 \left|e^{\alpha\Delta t}\right|^2&\leq 1 \Leftrightarrow
-\left(e^{\alpha\Delta t}\right)\left(e^{\alpha\Delta t}\right)^*\leq 1 \\
+\left(e^{\alpha\Delta t}\right)\left(e^{\alpha\Delta t}\right)^*\leq 1 \nonumber\\
 \left(1-\frac{\Delta t}{E_r}\right)^2
 \left(1-c+c\cos\left(k\Delta x\right)-ic\sin\left(k\Delta x\right)\right) &
-\left(1-c+c\cos\left(k\Delta x\right)+ic\sin\left(k\Delta x\right)\right)\leq 1 \\
-\left(1-\frac{\Delta t}{E_r}\right)^2\left(1+2(c^2-c)(1-\cos(k\Delta x))\right) &\leq 1 \\
-1+2(c^2-c)(1-\cos(k\Delta x)) &\leq \frac{E_r^2}{\left(E_r-\Delta t\right)^2}	\tag{$\forall k$} \\
-1+2(c^2-c)(1-[-1,1]) &\leq \frac{E_r^2}{\left(E_r-\Delta t\right)^2} \\
-1+2(c^2-c)([0,2]) &\leq \frac{E_r^2}{\left(E_r-\Delta t\right)^2} \\
-\frac{E_r^2}{\left(E_r-\Delta t\right)^2}-1 &\geq 4K(c^2-c)		\tag{$\forall K\in[0,1]$}
-\end{align*}
-We can reinterpret this stability condition more helpfully as $\frac{E_r^2}{\left(E_r-\Delta t\right)^2}-1\geq\max\left(0,4(c^2-c)\right)$; this tells us for instance that for $c<1$ (and so $0>c^2-c$), the minimum $E_r$ for which stability is guaranteed is given by
+\left(1-c+c\cos\left(k\Delta x\right)+ic\sin\left(k\Delta x\right)\right)\leq 1 \nonumber\\
+\left(1-\frac{\Delta t}{E_r}\right)^2\left(1+2(c^2-c)(1-\cos(k\Delta x))\right) &\leq 1 \nonumber\\
+1+2(c^2-c)(1-\cos(k\Delta x)) &\leq \frac{E_r^2}{\left(E_r-\Delta t\right)^2}	\tag{$\forall k$} \nonumber\\
+1+2(c^2-c)(1-[-1,1]) &\leq \frac{E_r^2}{\left(E_r-\Delta t\right)^2} \nonumber\\
+1+2(c^2-c)([0,2]) &\leq \frac{E_r^2}{\left(E_r-\Delta t\right)^2} \nonumber\\
+\frac{E_r^2}{\left(E_r-\Delta t\right)^2}-1 &\geq 4K(c^2-c)			\label{eq:stable}
+\end{align}
+Under the assumption that we want stability to be guaranteed for \emph{all} $K\in[0,1]$, we can reinterpret the RHS of the stability condition as $\max\left(0,4(c^2-c)\right)$. Furthermore, as $E_r$ and $\Delta t$ are both timescales, it is helpful to write it in terms of $A=E_r/\Delta t$. This give us
+\begin{align}
+\frac{\left(A\Delta t\right)^2}{\left(A\Delta t-\Delta t\right)^2}-1 &\geq \max\left(0,4(c^2-c)\right) \nonumber\\
+\left(\frac{A}{A-1}\right)^2 -1 &\geq \max\left(0,4(c^2-c)\right) \nonumber\\
+\text{$0\leq c\leq 1$ case:\quad} \left(\frac{A}{A-1}\right)^2 -1 &\geq 0 \nonumber\\
+\left(\frac{A}{A-1}\right)^2 &\geq 1 \nonumber\\
+A^2 &\geq \left(A-1\right)^2 \nonumber\\
+0 &\geq A^2 + 1 - 2A - A^2 \nonumber\\
+2A &\geq 1 \nonumber\\
+A &\geq \frac{1}{2}.		\label{eq:stab1} \\
+\text{$c>1$ case:\quad} \left(\frac{A}{A-1}\right)^2 -1 &\geq 4(c^2-c)		\label{eq:stab4} \\
+\left(\frac{A}{A-1}\right)^2 &\geq 4(c^2-c)+1 = 4\left(c-\frac{1}{2}\right)^2 \nonumber \\
+\left|\frac{A}{A-1}\right| &\geq 2\left|c-\frac{1}{2}\right| \nonumber \\
+\left|\frac{A}{A-1}\right| &\geq 2c-1 \nonumber \\
+c &\leq \frac{1}{2}\left(1 + \left|\frac{A}{A-1}\right|\right) 	\label{eq:stab5}
+\end{align}
+Condition \ref{eq:stab1} informs us that in the case of $c<1$ and $A<1/2$, stability is not guaranteed. It can be expected that this is where evaporation/condensation can produce instabilities (due to sufficiently small $A$ $\Leftrightarrow$ fast evaporation/condensation) that advection cannot necessarily eliminate (due to sufficiently small $c$ $\Leftrightarrow$ slow advection). This will result in unphysical values at best (potentially if instabilities occur at all, regardless of whether they are eliminated or not) and growth without bound at worst. \\
+In addition, we find from condition \ref{eq:stab5} that if $c>1$ and $A<1/2$ then
 \begin{align*}
-\frac{E_r^2}{\left(E_r-\Delta t\right)^2}-1&\geq 0 \\
-\frac{E_r^2}{\left(E_r-\Delta t\right)^2} &\geq 1 \\
-E_r^2 &\geq E_r^2 - 2E_r\Delta t + \Delta t^2 \\
-2E_r\Delta t &\geq \Delta t^2 \\
-E_r &\geq \frac{\Delta t}{2}
+\frac{A}{A-1} &< -1 \\
+\left|\frac{A}{A-1}\right| &< 1 \\
+1 < c \leq \frac{1}{2}\left(1 + \left|\frac{A}{A-1}\right|\right) &< 1
 \end{align*}
-In general, we can produce a plot of predicted stability for the system, based on the values of $K$ for which the stability condition holds for given $c$ and $E_r$ values. Such a plot can be seen as figure \ref{fig:stability_pred} below.
+i.e. $1<c<1$: contradiction. We therefore find that if $A<1/2$ then stability cannot be guaranteed for \emph{any} $c$. \\
+For these reasons, it would be ideal to always use $A>1/2$ in practice, even though $A<1/2$ may not necessarily produce any significant instability. \\
+In general, we can produce a plot of predicted stability for the system based on the general-case stability condition. In this case, it is helpful to use condition \ref{eq:stable} and produce a plot showing the values of $K$ for which the stability condition holds for given $c$ and $E_r$ values. Such a plot can be seen as figure \ref{fig:stability_pred} below.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{stability_pred.png}
-\caption{A plot of the stability of the system as predicted by the analysis above. The colour scale indicates the proportion of values for $K\in[0,1]$ for which the stability condition holds; e.g. in the yellow region, where the proportion is $1$, stability is guaranteed.}
+\caption{A plot of the stability of the system as predicted by the analysis above. The colour scale indicates the proportion of values for $K\in[0,1]$ for which the stability condition holds; e.g. in the yellow region, where the proportion is $100\%$, stability is guaranteed.}
 \label{fig:stability_pred}
 \end{figure}
+However, this plot alone does not tell us how the system behaves for diverging $c$ and $A$. Condition \ref{eq:stab1} already tells us of the stability for $c\leq 1$, so let us consider the limiting behaviours of condition \ref{eq:stab4}.
+\begin{align}
+\text{$c>1$ case as $c\to +\infty$:\quad} \left(\frac{A}{A-1}\right)^2 -1 &\geq \lim_{c\to +\infty}\left(4(c^2-c)\right) \nonumber \\
+\left(\frac{A}{A-1}\right)^2 -1 &\geq +\infty		\label{eq:stab2} \\
+\text{$c>1$ case as $A\to +\infty$:\quad} \lim_{A\to +\infty}\left(\left(\frac{A}{A-1}\right)^2\right)-1 &\geq 4(c^2-c) \nonumber\\
+1 - 1 &\geq 4(c^2-c) \nonumber\\
+c^2-c &\leq 0 \nonumber\\
+c^2 &\leq 1 \Leftrightarrow
+c \leq 1.		\label{eq:stab3}
+\end{align}
+Condition \ref{eq:stab2} is undefined at $A=1$ and false otherwise. This implies that for all $A\neq 1$ (that is, for all $E_r\neq\Delta t$), instability must occur for all $c>c_{\text{min}}$ for some $c_{\text{min}}>1$. As such, there does not exist an $A$ for which stability is guaranteed for all $c$. \\
+Condition \ref{eq:stab3} tells us that for any $A>1$, we can guarantee stability for $c\leq 1$. This is convenient in our case, as realistic values for $E_r$ (ADD CITE - B\&F?) tend to be much larger than our $\Delta t=0.1$. However, weather models typically have much larger timesteps for the sake of computation speed, rendering this advantage moot; in fact, models of the kind of \citet{Smith1990} (in which $r_v$ and $r_l$, or equivalents thereto, are not prognostic) typically treat evaporation and condensation as instantaneous because the timescales over which those processes occur are so much smaller than the $\Delta t$ used.\\
 
 \newpage
 \bibliography{references}

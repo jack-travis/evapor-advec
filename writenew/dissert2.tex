@@ -39,9 +39,8 @@ A dissertation submitted in partial fulfilment of the requirement for the MSc de
 \section{Motivation}
 The topic of this work is the handling of evaporation and condensation (considered as a single process) in weather models: in particular, how a sudden state change of a large amount of fluid, e.g. in passing through a front, can cause instability and/or unphysical values for fluid properties to arise. \\
 Ideally, we would like to be know what conditions result in instability, so that changes in how evaporation and condensation are represented in models can be recommended to prevent such issues occuring. \\
-DISCUSS WILSON (and SMITH in context thereof) \\
-DISCUSS G\&S \\
-DISCUSS JAEHN (cite??) \\
+see \citet{Wilson2008} and \citet{Smith1990}. \\
+see \citet{GS1990}. \\
 
 \section{Problem}
 For the sake of study, an example problem has been constructed in which fluid advects continuously through a region of varying temperature, thus variously evaporating and condensing. In this example problem, the space is one-dimensional in representation, given for convenience a size of $1$ arbitrary space unit. \\
@@ -60,7 +59,15 @@ As based on an formula taken from \citet[p.~2920]{BF2002} apud \citet{RH1983}, e
 for a constant evaporation/condensation timescale $E_r$, where $r_{vs}$ is the saturation mixing ratio. \\
 From the original form of equation \ref{eq:1}, the part of the calculation based on $E_r$ differs in two ways. \\
 Firstly, it was originally multiplied by a $\Delta t$ component, such that $\Delta r_v|_{\text{cond}}$ (the change in $r_v$ due to $E_r$ at each timestep) would not be dependent on $\Delta t$, which was done to make stability of the system easier to achieve. For the rate to not vary with timescale is unrealistic, and so here the $\Delta t$ component has been removed. \\
-Secondly, $E_r$ is taken in the original source to vary in temperature INSERT EQUATION FROM B\&F: since that would here mean varying $E_r$ over the domain, it has instead taken to be constant (using by default the average temperature over the domain, though the value was varied experimentally). It is $r_{vs}$ which is dependent on $T$, and thus varies over the domain. \\
+Secondly, $E_r$ is taken in \citeauthor{BF2002} to vary in temperature by the formula
+\begin{equation}
+E_r = 1+\frac{L_v^2r_{vs}}{c_pR_vT^2} \label{eq:condrate}
+\end{equation}
+where 
+$L_v$ is the latent heat of evaporation of water, 
+$c_P$ is the specific heat of air, 
+and $R_v$ is the gas constant of water vapour. 
+Since having this in our model would mean varying $E_r$ over the domain, it has instead taken to be constant: it is only $r_{vs}$ which is dependent on $T$, and thus varies over the domain. \\
 Between the evaporation/condensation (as per equation \ref{eq:1}) and the advection, and ignoring the limitation described in equation \ref{eq:2}, we can now produce the PDE
 \[
 \frac{\text{D} r_v}{\text{D} t}=\frac{\partial r_v}{\partial t}|_{\text{cond}}
@@ -69,7 +76,14 @@ thus
 \begin{equation}
 \frac{\partial r_v}{\partial t}+u\frac{\partial r_v}{\partial x}=\frac{r_{vs} - r_v}{E_r} \label{eq:3}
 \end{equation}
-where the LHS is the advection as a material derivative, and the RHS is the evaporation/condensation as a sink/source term.
+where the LHS is the advection as a material derivative, and the RHS is the evaporation/condensation as a sink/source term. \\
+(IS THIS THE BEST PLACE?) 
+On the contrary to equation \ref{eq:1}, however, we note that it is unrealistic to allow evaporation if there is no liquid water remaining in the system, and vice versa: this is because $r_v$ or $r_l$ could then attain negative values, naturally resulting in unstable oscillations occuring. In order to prevent this, the change in fluid concentrations due to evaporation or condensation at each timestep is actually taken to be
+\begin{equation} \label{eq:2}
+\Delta r_v|_{\text{cond}} = \min\left(\Delta t\frac{r_{vs} - r_v}{E_r},r_l\right)
+\end{equation}
+Nevertheless, because of the dependence on $r_{vs} - r_v$, the steady state with respect to evaporation/condensation is where $r_{vs}=r_v$, regardless of the value for $r_l$. \\
+An alternate method is found in \citet{Jaehn2015} (EXPAND). \\
 
 \section{Implementation}
 We assume that the fluid initially is entirely liquid water, since the fluid would be expected to be mostly liquid within typical temperate values for temperature and pressure. \\
@@ -84,11 +98,7 @@ e_s &= \begin{cases}
 r_{vs} &= B\frac{e_s}{P-e_s} \label{eq:magic}
 \end{align}
 using $T$ in degrees Celsius, where $P$ is pressure and $B\approx0.62186$ is the ratio of the molar masses of water and air. (CITE AMBAUM) \\
-We note that it is unrealistic to allow evaporation if there is no liquid water remaining in the system, and vice versa, because then $r_v$ or $r_l$ could attain negative values, with this resulting in unstable oscillations. In order to prevent this, the change in fluid concentrations due to evaporation or condensation at each timestep, on the contrary to equation \ref{eq:1}, in implementation is actually taken to be
-\begin{equation} \label{eq:2}
-\Delta r_v|_{\text{cond}} = \min\left(\Delta t\frac{r_{vs} - r_v}{E_r},r_l\right)
-\end{equation}
-Because of this dependence on $r_{vs}-r_v$, the steady state with respect to evaporation/condensation is where $r_{vs}=r_v$ (regardless of the value for $r_l$). \\
+By default, $E_r$ was given a value based on the average temperature over the domain, as per equation \ref{eq:condrate}; however, the value was varied experimentally. \\
 It is assumed that since the fluid advects unidirectionally across the space from one side to the other, we can have the fluid being spontaneously created on the source side and destroyed on the other. For the implementation, it is assumed that the fluid off the left edge of the grid has the same temperature (and so $r_{vs}$) of the leftmost cell on the grid, and so has
 \begin{align}
 r_{v,-1} &= r_{vs,0} \label{eq:a} \\
@@ -205,14 +215,14 @@ Condition \ref{eq:stab2} is undefined at $A=1$ and false otherwise. This implies
 Condition \ref{eq:stab3} tells us that for any $A>1$ ($\Leftrightarrow E_r>\Delta t$), we can guarantee stability for $c\leq 1$. This is convenient in our case, as realistic values for $E_r$ (as in equation REF) tend to be much larger than our $\Delta t=0.1$. However, weather models typically have much larger timesteps for the sake of computation speed, rendering this advantage moot; in fact, (AS AFOREMENTIONED) models of the kind of \citet{Smith1990} (in which $r_v$ and $r_l$, or equivalents thereto, are not prognostic) typically treat evaporation and condensation as instantaneous because the timescales over which those processes occur are so much smaller than the $\Delta t$ used.
 
 \section{Model results}
-To examine simple behaviour of the model, we can see what kind of ``shape'' the system settles into for some example values of $c$ and $E_r$. Such a plot, specifically showing the development of $r_v$ over time, can be seen as figure \ref{fig:samplot} below.
+To examine simple behaviour of the model, we can see how the system evolves for some example values of $c$ and $E_r$. Such a plot, specifically showing the development of $r_v$ over time, can be seen as figure \ref{fig:samplot} below.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{samplot.png}
-\caption{Various plots of $r_v$ over time $t$ for different values of $E_r$ and $c$, showing some exemplary behaviours of the system. Note that the lightest and darkest regions actually go outside the limits of $[-0.01,0.02]$.}
+\caption{Various plots of $r_v$, over a time period $t\in[0,10]$, for different values of $E_r$ and $c$, showing some exemplary behaviours of the system. Note that parts of the lightest and darkest regions actually go outside the limits of $[-0.01,0.02]$.}
 \label{fig:samplot}
 \end{figure}
-In the example model runs that are stable, $r_v$ approaches a pattern where it has values of approximately $0.0078$ in the colder thirds (of $T=10^{\circ}$C) and approximately $0.0143$ in the warmer middle third (of $T=20^{\circ}$C). The sum of $r_l$ and $r_v$ comes close to $1$ by an error on the order of $10^{-14}$ in the $c=0.5$, $E_r=0.3$ case. \\
+In the example model runs that are stable, $r_v$ approaches a pattern where it has values of approximately $0.0078$ in the colder thirds (of $T=10^{\circ}$C) and approximately $0.0143$ in the warmer middle third (of $T=20^{\circ}$C). The sum of $r_l$ and $r_v$ comes close to $1$ by an error on the order of $10^{-14}$, in the $c=0.5$, $E_r=0.3$ case at termination. \\
 DISCUSS OTHER PLOTS \\
 However, it is impossible to tell for sure how the model is behaving simply by looking at the shape of $r_v$ at any given timestep. Instead, in order to better tell in particular whether a model run is approaching a steady state, we can provide an energy measure of the fluid, as
 \[
@@ -222,10 +232,10 @@ and track the change in this quantity between timesteps, hereafter $\Delta R$. (
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{exempla.png}
-\caption{Various plots of the proportion of $\Delta R$ to $R|_{t=0}$ for different values of $E_r$ and $c$. Time runs from $t=0$ until oscillations in $\Delta R$ are negligibly small, as described below by condition \ref{eq:variat}.}
+\caption{Various plots of the proportion of $\Delta R$ to $R|_{t=0}$ for different values of $E_r$ and $c$. Time runs from $t=0$ until oscillations in $\Delta R$ are negligibly small, as described by condition \ref{eq:variat} below.}
 \label{fig:exempla}
 \end{figure}
-Generally, $\Delta R$ oscillates over time (that is, $R$ steps up and down between timesteps) and always at first increases in magnitude. Thereafter, two variations in behaviour can occur: either the oscillations continue to grow without limit, or $\Delta R$ will begin to decrease in magnitude; and either the oscillations will approach $0$, or will become steady at some finite non-zero value. \\
+Generally, $\Delta R$ oscillates over time (that is, $R$ steps up and down between timesteps) and always at first increases in magnitude. Thereafter, two variations in behaviour can occur: either the oscillations continue to grow without limit, or $\Delta R$ will begin to decrease in magnitude at some point; and either the oscillations will approach $0$ (not necessarily reaching it), or will become steady at some finite non-zero value. \\
 It is the case of the oscillations approaching $0$ that we desire, so we can investigate how many timesteps it takes for $\Delta R$ to fall in magnitude below some small threshold value. A plot produced using the condition
 \begin{equation}
 \left|\frac{\Delta R}{R|_{t=0}}\right|<10^{-5}		\label{eq:variat}
@@ -234,10 +244,12 @@ can be seen in figure \ref{fig:stable_real} below.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{stable_real.png}
-\caption{A plot showing the first time $t\in(\Delta t,50)$ for which condition \ref{eq:variat} is true, assuming that oscillations less than that value are negligible. White regions indicate that the condition failed to be true before the time limit $t\geq 50$.}
+\caption{A plot showing the first time $t\in(\Delta t,50)$ for which condition \ref{eq:variat} is true. White regions indicate that the condition failed to be true before the time limit $t\geq 50$.}
 \label{fig:stable_real}
 \end{figure}
-It is obvious that the boundaries of the dark region (largely of stability) closely match those of the yellow region (of total stability) in figure \ref{fig:stability_pred}. MENTION TWO DIFFERENCES AND STATE LIKELY REASONS
+It is obvious that the boundaries of the dark region (largely of stability) closely match those of the yellow region (of total stability) in figure \ref{fig:stability_pred}. However, two areas of significant difference can be seen. \\
+In the region of $E_r<0.05$, we can see that the system can sometimes approach a steady state. This is the region where instabilities arise from the small $E_r$ $\Leftrightarrow$ fast evaporation/condensation, but these instabilities are then suppressed by advection. Nevertheless, the instabilities just occuring at all can result in unphysical values for $r_v$ and $r_l$ occuring, so this behaviour is undesirable. \\
+We also strangely find some interesting ``striping'' in the top-right region where $c$ is large and $E_r$ is large. I am not certain exactly what is happening here (INVESTIGATE). 
 
 \section{Alternate method}
 

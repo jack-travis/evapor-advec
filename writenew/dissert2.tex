@@ -37,26 +37,29 @@ A dissertation submitted in partial fulfilment of the requirement for the MSc de
 \newpage
 
 \section{Motivation}
-The topic of this work is the handling of evaporation and condensation (considered as a single process) in weather models: in particular, how a sudden state change of a large amount of fluid, e.g. in passing through a front, can cause instability and/or unphysical values for fluid properties to arise. \\
-Ideally, we would like to be know what conditions result in instability, so that changes in how evaporation and condensation are represented in models can be recommended to prevent such issues occuring. \\
-see \citet{Wilson2008} and \citet{Smith1990}. \\
-see \citet{GS1990}. \\
+The topic of this work is the handling of evaporation and condensation (considered as a single process) in weather models: in particular, how a sudden state change of a large amount of fluid, e.g. in passing through a front, can cause instability and/or unphysical values for fluid properties to arise. Ideally, we would like to be know what conditions result in instability, so that changes in how evaporation and condensation are represented in models can be recommended to prevent such issues occuring. \\
+~\\
+\citet[p.~2095]{Wilson2008} mentions the method of \citet{Smith1990} of representing evaporation and condensation in comparison with other methods. In \citeauthor{Smith1990}, since the timestep of weather models tends to be very large with respect to the timescale over which evaporation and condensation occur, it is assumed that evaporation and condensation can be treated as instantaneous. Consequently, the model used simply has the total amount of fluid as a prognostic variable, from which the proportions of liquid and vapour can simply be predicted from air and fluid properties, bypassing any representation of the physical processes of evaporation and condensation entirely.
+As mentioned by \citeauthor{Wilson2008}, such a method is more commonly used in weather models than the alternative (treating vapour and liquid separately), as the diagnosis of variables can easily guarantee that their values are physical; however, the diagnosis is based upon a PDF of the variability of the system's properties, and it is difficult to tell how changes to those properties can affect the PDF's shape, making analysis of the model difficult. In addition, treating evaporation and condensation as instantaneous does not simulate the processes themselves in any realistic manner: to be able to do so is the primary goal of this project. \\
+\citeauthor{Wilson2008} also discusses the example of \citet{Tiedtke1993}, which has the method of prognostic vapour and liquid variables (N:WHAT ABOUT IMPLIED DISTRIBUTION??). Using this method, one can easily represent physical processes in terms of changes by timestep of the system's properties, but it can be very difficult to ensure that realistic values and system behaviours will occur: investigating ways of overcoming such problems is this project's secondary goal (N:APPROPRIATE TO MENTION?). \\
+~\\
+\citet{GS1990} shows an idealised situation featuring the evaporation and condensation of fluid with advection over a space, and compares a numerical solution used to solve the problem with an analytic solution. It shows that in the numerical solution, unstable oscillations can easily occur at a boundary over which evaporation or condensation occur. (N:HOW MUCH NEEDS TO BE MENTIONED?) \\
 
 \section{Problem}
-For the sake of study, an example problem has been constructed in which fluid advects continuously through a region of varying temperature, thus variously evaporating and condensing. In this example problem, the space is one-dimensional in representation, given for convenience a size of $1$ arbitrary space unit. \\
-Such fluid properties as air density, air pressure and background fluid velocity are assumed to be approximately even over the domain, as would be generally expected for fluid advection in the horizontal; the only property that varies over the space is temperature. The exact temperature field used by the model was varied experimentally, but most commonly were used a basic ``square'' temperature field and a (marginally) more realistic sloped field, as seen in figure \ref{fig:tempfields} below.
+For the sake of study, an example problem has been constructed in which fluid advects continuously through a region of varying temperature, thus variously evaporating and condensing. The space is one-dimensional in representation (only horizontal fluid movement is considered), and for convenience the space is given a length of $1$ arbitrary space unit. \\
+Fluid properties such as air density, air pressure and background fluid velocity are assumed to be approximately even over the domain, as would be generally expected for fluid advection in the horizontal; the only property that varies over the space is temperature. The exact temperature field used by the model was varied experimentally, but a basic ``square'' temperature field was generally used, along with an experimental ``sloped'' field (expected to be marginally more realistic), as seen in figure \ref{fig:tempfields} below. Unless otherwise mentioned, all model runs throughout this work used the square field.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{tempfields.png}
-\caption{The two temperature fields that were generally used in runs of the model. The horizontal axis is in arbitrary space units, while the vertical axis is in Kelvins; the upper and lower temperatures are respectively $20^{\circ}$C and $10^{\circ}$C.}
+\caption{The two temperature fields that were generally used in runs of the model. The horizontal axis is in arbitrary space units, while the vertical axis is in Kelvins; for both fields, the upper and lower temperatures are $20^{\circ}$C and $10^{\circ}$C respectively.}
 \label{fig:tempfields}
 \end{figure}
-Both temperature fields are tripartite, having a warmer region of evaporation surrounded by a cooler region of condensation. This roughly simulates the example situation of fluid advecting through a front. \\
+Both temperature fields are tripartite, having a warm middle third of evaporation and two cooler surrounding thirds of condensation. This roughly simulates the example situation of fluid advecting through a front, though the temperature difference is fairly extreme (N:EXPAND?). \\
 As based on an formula taken from \citet[p.~2920]{BF2002} apud \citet{RH1983}, evaporation and condensation are taken to be controlled by the following equation for the concentration of water vapour $r_v$ (and with a similar equation existing for the liquid water concentration $r_l$),
 \begin{equation} \label{eq:1}
 \frac{\partial r_v}{\partial t}|_{\text{cond}}=\frac{r_{vs} - r_v}{E_r}
 \end{equation}
-for a constant evaporation/condensation timescale $E_r$, where $r_{vs}$ is the saturation mixing ratio. \\
+for a constant evaporation-condensation timescale $E_r$, where $r_{vs}$ is the saturation mixing ratio. \\
 From the original form of equation \ref{eq:1}, the part of the calculation based on $E_r$ differs in two ways. \\
 Firstly, it was originally multiplied by a $\Delta t$ component, such that $\Delta r_v|_{\text{cond}}$ (the change in $r_v$ due to $E_r$ at each timestep) would not be dependent on $\Delta t$, which was done to make stability of the system easier to achieve. For the rate to not vary with timescale is unrealistic, and so here the $\Delta t$ component has been removed. \\
 Secondly, $E_r$ is taken in \citeauthor{BF2002} to vary in temperature by the formula
@@ -68,7 +71,7 @@ $L_v$ is the latent heat of evaporation of water,
 $c_P$ is the specific heat of air, 
 and $R_v$ is the gas constant of water vapour. 
 Since having this in our model would mean varying $E_r$ over the domain, it has instead taken to be constant: it is only $r_{vs}$ which is dependent on $T$, and thus varies over the domain. \\
-Between the evaporation/condensation (as per equation \ref{eq:1}) and the advection, and ignoring the limitation described in equation \ref{eq:2}, we can now produce the PDE
+Between the evaporation and condensation (as per equation \ref{eq:1}) and the advection, and ignoring the limitation described in equation \ref{eq:2}, we can now produce the PDE
 \[
 \frac{\text{D} r_v}{\text{D} t}=\frac{\partial r_v}{\partial t}|_{\text{cond}}
 \]
@@ -76,14 +79,17 @@ thus
 \begin{equation}
 \frac{\partial r_v}{\partial t}+u\frac{\partial r_v}{\partial x}=\frac{r_{vs} - r_v}{E_r} \label{eq:3}
 \end{equation}
-where the LHS is the advection as a material derivative, and the RHS is the evaporation/condensation as a sink/source term. \\
-(IS THIS THE BEST PLACE?) 
+where the left side is advection as a material derivative, and the right side is condensation as a sink/source term. \\
 On the contrary to equation \ref{eq:1}, however, we note that it is unrealistic to allow evaporation if there is no liquid water remaining in the system, and vice versa: this is because $r_v$ or $r_l$ could then attain negative values, naturally resulting in unstable oscillations occuring. In order to prevent this, the change in fluid concentrations due to evaporation or condensation at each timestep is actually taken to be
 \begin{equation} \label{eq:2}
 \Delta r_v|_{\text{cond}} = \min\left(\Delta t\frac{r_{vs} - r_v}{E_r},r_l\right)
 \end{equation}
-Nevertheless, because of the dependence on $r_{vs} - r_v$, the steady state with respect to evaporation/condensation is where $r_{vs}=r_v$, regardless of the value for $r_l$. \\
-An alternate method is found in \citet{Jaehn2015} (EXPAND). \\
+Nevertheless, because of the dependence on $r_{vs} - r_v$, the steady state with respect to evaporation and condensation is where $r_{vs}=r_v$, regardless of the value for $r_l$. \\
+\citet[p.~324]{Jaehn2015} features an alternate way of having dependence on $r_l$, by which the equivalent to equation \ref{eq:1} is effectively
+\[
+\frac{\partial r_v}{\partial t}|_{\text{cond}} = \frac{r_v-r_{vs}-r_l+\sqrt{\left(r_v-r_{vs}\right)^2+r_l^2}}{E_r}
+\]
+(N:WHAT'S THE DIFFERENCE?)
 
 \section{Implementation}
 We assume that the fluid initially is entirely liquid water, since the fluid would be expected to be mostly liquid within typical temperate values for temperature and pressure. \\
@@ -97,7 +103,7 @@ e_s &= \begin{cases}
 \end{cases} \label{eq:tetens} \\
 r_{vs} &= B\frac{e_s}{P-e_s} \label{eq:magic}
 \end{align}
-using $T$ in degrees Celsius, where $P$ is pressure and $B\approx0.62186$ is the ratio of the molar masses of water and air. (CITE AMBAUM) \\
+using $T$ in degrees Celsius, where $P$ is pressure and $B\approx0.62186$ is the ratio of the molar masses of water and air. (N:CITE AMBAUM) \\
 By default, $E_r$ was given a value based on the average temperature over the domain, as per equation \ref{eq:condrate}; however, the value was varied experimentally. \\
 It is assumed that since the fluid advects unidirectionally across the space from one side to the other, we can have the fluid being spontaneously created on the source side and destroyed on the other. For the implementation, it is assumed that the fluid off the left edge of the grid has the same temperature (and so $r_{vs}$) of the leftmost cell on the grid, and so has
 \begin{align}
@@ -105,7 +111,7 @@ r_{v,-1} &= r_{vs,0} \label{eq:a} \\
 r_{l,-1} &= r_{v,0}+r_{l,0}-r_{vs,0} \label{eq:b}
 \end{align}
 such that it is in a steady state (as aforementioned in the context of equation \ref{eq:2}) and has the same $r_v+r_l$ as the leftmost cell. \\
-For simplicity, here the advection process is represented by a forwards-in-time backwards-in-space (FTBS) finite difference method. Note however that since the advection and evaporation/condensation processes can interact with one another in complex ways; thus, in order to better be able to achieve stability, it is best to keep the two operations separate. We thus end up with the $r_v$ relation
+For simplicity, here the advection process is represented by a forwards-in-time backwards-in-space (FTBS) finite difference method. Note however that since the advection and evaporation and condensation processes can interact with one another in complex ways; thus, in order to better be able to achieve stability, it is best to keep the two operations separate. We thus end up with the $r_v$ relation
 \begin{align} \label{eq:4}
 r'_{v,i} &= r_{v,i} + \min\left(\Delta t\frac{r_{vs,i} - r_{v,i}}{E_r},r_{l,i}\right) \\ \label{eq:5}
 r''_{v,i} &= r'_{v,i} - c\left(r'_{v,i} - r'_{v,i-1}\right)
@@ -186,7 +192,7 @@ A &\geq \frac{1}{2}.		\label{eq:stab1} \\
 \left|\frac{A}{A-1}\right| &\geq 2c-1 \nonumber \\
 c &\leq \frac{1}{2}\left(1 + \left|\frac{A}{A-1}\right|\right) 	\label{eq:stab5}
 \end{align}
-Condition \ref{eq:stab1} informs us that in the case of $c<1$ and $A<1/2$, stability is not guaranteed. It can be expected that this is where evaporation/condensation can produce instabilities (due to sufficiently small $A$ $\Leftrightarrow$ fast evaporation/condensation) that advection cannot necessarily eliminate (due to sufficiently small $c$ $\Leftrightarrow$ slow advection). This will result in unphysical values at best (potentially if instabilities occur at all, regardless of whether they are eliminated or not) and growth without bound at worst. \\
+Condition \ref{eq:stab1} informs us that in the case of $c<1$ and $A<1/2$, stability is not guaranteed. It can be expected that this is where evaporation and condensation can produce instabilities (due to sufficiently small $A$ $\Leftrightarrow$ fast evaporation and condensation) that advection cannot necessarily eliminate (due to sufficiently small $c$ $\Leftrightarrow$ slow advection). This will result in unphysical values at best (potentially if instabilities occur at all, regardless of whether they are eliminated or not) and growth without bound at worst. \\
 In addition, we find from condition \ref{eq:stab5} that if $c>1$ and $A<1/2$ then
 \begin{align*}
 \frac{A}{A-1} &< -1 \\
@@ -212,7 +218,7 @@ c^2 &\leq 1 \Leftrightarrow
 c \leq 1.		\label{eq:stab3}
 \end{align}
 Condition \ref{eq:stab2} is undefined at $A=1$ and false otherwise. This implies that for all $A\neq 1$ (that is, for all $E_r\neq\Delta t$), instability must occur for all $c>c_{\text{min}}$ for some $c_{\text{min}}>1$. As such, there does not exist an $A$ for which stability is guaranteed for all $c$. \\
-Condition \ref{eq:stab3} tells us that for any $A>1$ ($\Leftrightarrow E_r>\Delta t$), we can guarantee stability for $c\leq 1$. This is convenient in our case, as realistic values for $E_r$ (as in equation REF) tend to be much larger than our $\Delta t=0.1$. However, weather models typically have much larger timesteps for the sake of computation speed, rendering this advantage moot; in fact, (AS AFOREMENTIONED) models of the kind of \citet{Smith1990} (in which $r_v$ and $r_l$, or equivalents thereto, are not prognostic) typically treat evaporation and condensation as instantaneous because the timescales over which those processes occur are so much smaller than the $\Delta t$ used.
+Condition \ref{eq:stab3} tells us that for any $A>1$ ($\Leftrightarrow E_r>\Delta t$), we can guarantee stability for $c\leq 1$. This is convenient in our case, as realistic values for $E_r$ (as provided by equation \ref{eq:condrate}) tend to be much larger than our $\Delta t=0.1$. However, weather models typically have much larger timesteps for the sake of computation speed, rendering this advantage moot; in fact, as aforementioned, models of the kind of \citet{Smith1990} (in which variables for vapour and liquid concentrations are not prognostic) typically treat evaporation and condensation as instantaneous because the timescales over which those processes occur are so much smaller than the $\Delta t$ used.
 
 \section{Model results}
 To examine simple behaviour of the model, we can see how the system evolves for some example values of $c$ and $E_r$. Such a plot, specifically showing the development of $r_v$ over time, can be seen as figure \ref{fig:samplot} below.
@@ -223,16 +229,16 @@ To examine simple behaviour of the model, we can see how the system evolves for 
 \label{fig:samplot}
 \end{figure}
 In the example model runs that are stable, $r_v$ approaches a pattern where it has values of approximately $0.0078$ in the colder thirds (of $T=10^{\circ}$C) and approximately $0.0143$ in the warmer middle third (of $T=20^{\circ}$C). The sum of $r_l$ and $r_v$ comes close to $1$ by an error on the order of $10^{-14}$, in the $c=0.5$, $E_r=0.3$ case at termination. \\
-DISCUSS OTHER PLOTS \\
-However, it is impossible to tell for sure how the model is behaving simply by looking at the shape of $r_v$ at any given timestep. Instead, in order to better tell in particular whether a model run is approaching a steady state, we can provide an energy measure of the fluid, as
+In the model runs where instabilities arise, various unphysical behaviours can occur, but it is worth mentioning that in most cases, at least part of the instabilities begin at the boundaries of the thirds of differing temperatures (indicating them to be instabilities from evaporation and condensation). \\
+It is impossible to tell for sure how the model is behaving by simply looking at the shape of $r_v$ at any given timestep. In order to better tell in particular whether a model run is approaching a steady state, we can define an energy measure of the fluid, as
 \[
 R = \sum_{\forall i}\left(r_{v,i}^2+r_{l,i}^2\right)
 \]
-and track the change in this quantity between timesteps, hereafter $\Delta R$. (CITE PAPER THAT DOES SOMETHING SIMILAR?) Plots showing the behaviour of $\Delta R$ can be seen in figure \ref{fig:exempla} below.
+and track the change in this quantity between timesteps, which will hereafter be referred to as $\Delta R$. (N:CITE PAPER THAT DOES SOMETHING SIMILAR?) Plots showing the behaviour of $\Delta R$ can be seen in figure \ref{fig:exempla} below.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{exempla.png}
-\caption{Various plots of the proportion of $\Delta R$ to $R|_{t=0}$ for different values of $E_r$ and $c$. Time runs from $t=0$ until oscillations in $\Delta R$ are negligibly small, as described by condition \ref{eq:variat} below.}
+\caption{Various plots of $\Delta R/R|_{t=0}$ for different values of $E_r$ and $c$. Time runs from $t=0$ until oscillations in $\Delta R$ are negligibly small, as described by condition \ref{eq:variat} below.}
 \label{fig:exempla}
 \end{figure}
 Generally, $\Delta R$ oscillates over time (that is, $R$ steps up and down between timesteps) and always at first increases in magnitude. Thereafter, two variations in behaviour can occur: either the oscillations continue to grow without limit, or $\Delta R$ will begin to decrease in magnitude at some point; and either the oscillations will approach $0$ (not necessarily reaching it), or will become steady at some finite non-zero value. \\
@@ -248,8 +254,8 @@ can be seen in figure \ref{fig:stable_real} below.
 \label{fig:stable_real}
 \end{figure}
 It is obvious that the boundaries of the dark region (largely of stability) closely match those of the yellow region (of total stability) in figure \ref{fig:stability_pred}. However, two areas of significant difference can be seen. \\
-In the region of $E_r<0.05$, we can see that the system can sometimes approach a steady state. This is the region where instabilities arise from the small $E_r$ $\Leftrightarrow$ fast evaporation/condensation, but these instabilities are then suppressed by advection. Nevertheless, the instabilities just occuring at all can result in unphysical values for $r_v$ and $r_l$ occuring, so this behaviour is undesirable. \\
-We also strangely find some interesting ``striping'' in the top-right region where $c$ is large and $E_r$ is large. I am not certain exactly what is happening here (INVESTIGATE). 
+In the region of $E_r<0.05$, we can see that the system can sometimes approach a steady state. This is the region where instabilities arise from the small $E_r$ $\Leftrightarrow$ fast evaporation and condensation (naturally at the boundaries of regions of different temperature), but where these instabilities are then suppressed by the advection. Nevertheless, the instabilities just occuring at all can result in unphysical values for $r_v$ and $r_l$, so this behaviour is undesirable. \\
+We also strangely find some interesting ``striping'' in the top-right region where $c$ is large and $E_r$ is large. I am not certain exactly what is happening here (N:INVESTIGATE). 
 
 \section{Alternate method}
 

@@ -37,31 +37,35 @@ class core:
         if self.t <= 0.0:
             self.initialise()
         #first B&F evaporation/condensation,
-        for i in range(self.gs):
-            Dr = self.Dt*(self.rvs[i] - self.vapour[i])/self.Er
-            #apply cap
-            Dr = min(Dr, self.liquid[i])
-            self.vapour[i] += Dr
-            self.liquid[i] -= Dr
-        #then advection
-        v_n = self.vapour.copy()
+        #which is treated implicitly
+        ta = self.Dt/self.Er
+        v_n = self.vapour.copy()    #first set
         l_n = self.liquid.copy()
-        #BTCS advection, solving a matrix equation M*r_new = r_old
-        C = self.Dt * self.u / self.Dx
-        M = numpy.eye(gs)
-        M += numpy.eye(gs, k=1) * C/2
-        M += numpy.eye(gs, k=-1) * -C/2
-        M[-1,-1] += C/2                     #handles right edge
-        v_n[0] += self.initial[0] * C/2     #handles left edge
-        l_n[0] += self.initial[1] * C/2     #
-        self.vapour = numpy.linalg.solve(a=M, b=v_n)
-        self.liquid = numpy.linalg.solve(a=M, b=l_n)
-        #OLD BELOW
-        #for i in range(self.gs):
-        #    drv = v_n[i] - (v_n[i-1] if i > 0 else self.initial[0])
-        #    drl = l_n[i] - (l_n[i-1] if i > 0 else self.initial[1])
-        #    self.vapour[i] -= self.Dt*(self.u/self.Dx)*drv
-        #    self.liquid[i] -= self.Dt*(self.u/self.Dx)*drl
+        for i in range(self.gs):
+            #handling r_v
+            rv_maybe = (v_n[i] - self.rvs[i])/(1+ta) + self.rvs[i]
+            drv = ta*(self.rvs[i] - rv_maybe)
+            if l_n[i] < drv:
+                self.vapour[i] = v_n[i] + l_n[i]
+            else:
+                self.vapour[i] = rv_maybe
+            #handling r_l
+            rl_maybe = (l_n[i] - self.rvs[i])/(1-ta) + self.rvs[i]
+            drl = ta*(self.rvs[i] - rl_maybe)
+            if l_n[i] < drl:
+                self.liquid[i] = 0.0
+            else:
+                self.liquid[i] = rl_maybe
+            #are these really to be separated?
+        #then advection
+        v_n = self.vapour.copy()    #second set, after evap/cond
+        l_n = self.liquid.copy()
+        #FTBS advection for simplicity
+        for i in range(self.gs):
+            drv = v_n[i] - (v_n[i-1] if i > 0 else self.initial[0])
+            drl = l_n[i] - (l_n[i-1] if i > 0 else self.initial[1])
+            self.vapour[i] -= self.Dt*(self.u/self.Dx)*drv
+            self.liquid[i] -= self.Dt*(self.u/self.Dx)*drl
         #finally
         self.t += self.Dt
     def run(self,duration):

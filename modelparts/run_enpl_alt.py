@@ -7,7 +7,7 @@ Tf = numpy.load("temp_field.npy")
 rv = numpy.load("vapour_init.npy")
 rl = numpy.load("liquid_init.npy")
 
-import model_implicit
+import model_scaled
 
 max_u = consts["L"]/(consts["gs"]*consts["Dt"])
 
@@ -18,7 +18,7 @@ maxduration = 50.0
 C_range = [0.5, 1., 3.]
 Er_range = [1./30, 2./30, 0.1, 0.3]
 
-sethresh = 1e-5
+thresh_high = 1.1
 
 spi = 1
 for Ci in range(len(C_range))[::-1]:
@@ -26,7 +26,7 @@ for Ci in range(len(C_range))[::-1]:
         C = C_range[Ci]
         Er = Er_range[Ei]
         #
-        c = model_implicit.core(consts,rv,rl,Tf)
+        c = model_scaled.core(consts,rv,rl,Tf)
         c.u = C * c.Dx / c.Dt
         c.initialise()
         c.Er = Er
@@ -40,9 +40,9 @@ for Ci in range(len(C_range))[::-1]:
             c.step()
             R_t.append(c.t)
             energy_now = (c.vapour ** 2).sum() + (c.liquid ** 2).sum()
-            ench = (energy_now - energy_prev) / energy_init
-            R_energy.append(ench)
-            if c.t > c.Dt and abs(ench) < sethresh:
+            endiff = abs(energy_now - energy_init)/energy_init
+            R_energy.append(endiff)
+            if c.t > c.Dt and abs(endiff) > thresh_high:
                 break
             energy_prev = energy_now
         #

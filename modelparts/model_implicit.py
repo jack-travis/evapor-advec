@@ -42,28 +42,22 @@ class core:
         v_n = self.vapour.copy()    #first set
         l_n = self.liquid.copy()
         for i in range(self.gs):
-            #handling r_v
-            rv_maybe = (v_n[i] - self.rvs[i])/(1+ta) + self.rvs[i]
+            rv_maybe = (v_n[i] + ta*self.rvs[i])/(1+ta)
             drv = ta*(self.rvs[i] - rv_maybe)
+            rl_maybe = l_n[i] - drv
             if l_n[i] < drv:
                 self.vapour[i] = v_n[i] + l_n[i]
-            else:
-                self.vapour[i] = rv_maybe
-            #handling r_l
-            rl_maybe = (l_n[i] - self.rvs[i])/(1-ta) + self.rvs[i]
-            drl = ta*(self.rvs[i] - rl_maybe)
-            if l_n[i] < drl:
                 self.liquid[i] = 0.0
             else:
+                self.vapour[i] = rv_maybe
                 self.liquid[i] = rl_maybe
-            #are these really to be separated?
         #then advection
-        v_n = self.vapour.copy()    #second set, after evap/cond
-        l_n = self.liquid.copy()
+        v_p = self.vapour.copy()    #second set, after evap/cond
+        l_p = self.liquid.copy()
         #FTBS advection for simplicity
         for i in range(self.gs):
-            drv = v_n[i] - (v_n[i-1] if i > 0 else self.initial[0])
-            drl = l_n[i] - (l_n[i-1] if i > 0 else self.initial[1])
+            drv = v_p[i] - (v_p[i-1] if i > 0 else self.initial[0])
+            drl = l_p[i] - (l_p[i-1] if i > 0 else self.initial[1])
             self.vapour[i] -= self.Dt*(self.u/self.Dx)*drv
             self.liquid[i] -= self.Dt*(self.u/self.Dx)*drl
         #finally

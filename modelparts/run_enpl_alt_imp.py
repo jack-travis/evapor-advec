@@ -18,7 +18,7 @@ maxduration = 50.0
 C_range = [0.5, 1., 3.]
 Er_range = [1./30, 2./30, 0.1, 0.3]
 
-sethresh = 1e-5
+thresh_high = 1.1
 
 spi = 1
 for Ci in range(len(C_range))[::-1]:
@@ -40,9 +40,9 @@ for Ci in range(len(C_range))[::-1]:
             c.step()
             R_t.append(c.t)
             energy_now = (c.vapour ** 2).sum() + (c.liquid ** 2).sum()
-            ench = (energy_now - energy_prev) / energy_init
-            R_energy.append(ench)
-            if c.t > c.Dt and abs(ench) < sethresh:
+            endiff = abs(energy_now - energy_init)/energy_init
+            R_energy.append(endiff)
+            if c.t > c.Dt and abs(endiff) > thresh_high:
                 break
             energy_prev = energy_now
         #

@@ -41,7 +41,7 @@ The topic of this work is the handling of evaporation and condensation (consider
 ~\\
 \citet[p.~2095]{Wilson2008} mentions the method of \citet{Smith1990} of representing evaporation and condensation in comparison with other methods. In \citeauthor{Smith1990}, since the timestep of weather models tends to be very large with respect to the timescale over which evaporation and condensation occur, it is assumed that evaporation and condensation can be treated as instantaneous. Consequently, the model used simply has the total amount of fluid as a prognostic variable, from which the proportions of liquid and vapour can simply be predicted from air and fluid properties, bypassing any representation of the physical processes of evaporation and condensation entirely.
 As mentioned by \citeauthor{Wilson2008}, such a method is more commonly used in weather models than the alternative (treating vapour and liquid separately), as the diagnosis of variables can easily guarantee that their values are physical; however, the diagnosis is based upon a PDF of the variability of the system's properties, and it is difficult to tell how changes to those properties can affect the PDF's shape, making analysis of the model difficult. In addition, treating evaporation and condensation as instantaneous does not simulate the processes themselves in any realistic manner: to be able to do so is the primary goal of this project. \\
-\citeauthor{Wilson2008} also discusses the example of \citet{Tiedtke1993}, which uses the method of prognostic vapour and liquid variables (N: WHAT ABOUT IMPLIED DISTRIBUTION??). Using this method, one can easily represent physical processes in terms of changes by timestep of the system's properties, but it can be very difficult to ensure that realistic values and system behaviours will occur: investigating ways of overcoming such problems is this project's secondary goal. \\
+\citeauthor{Wilson2008} also discusses the example of \citet{Tiedtke1993}, in whose method vapour and liquid variables are instead prognostic (as we will be doing). This way, one can easily represent physical processes in terms of changes by timestep of the system's properties, but it can be very difficult to ensure that realistic values and system behaviours will occur: investigating ways of overcoming such problems is this project's secondary goal. \\
 ~\\
 \citet{GS1990} shows an idealised situation featuring the evaporation and condensation of fluid with advection over a space, and compares a numerical solution used to solve the problem with an analytic solution. It shows that in the numerical solution, unstable oscillations can easily occur at a boundary over which evaporation or condensation occur. (N: DESCRIBE HOW PROBLEM IS OVERCOME) \\
 (N: MENTION WHAT IS MISSING FROM LITERATURE: NO ONE HAS UNCONDITIONALLY STABLE METHOD OF EVAP/COND FOR ANY RATE)
@@ -120,7 +120,7 @@ e_s &= \begin{cases}
 \end{cases} \label{eq:tetens} \\
 r_{vs} &= B\frac{e_s}{P-e_s} \label{eq:magic}
 \end{align}
-using $T$ in degrees Celsius, where $P$ is pressure and $B\approx0.62186$ is the ratio of the molar masses of water and air. Equation \ref{eq:tetens} is a Tetens formula, while equation \ref{eq:magic} is given as the definition of the saturation mixing ratio in (N: CITE AMBAUM) \\
+using $T$ in degrees Celsius, where $P$ is pressure and $B\approx0.62$ is the ratio of the molar masses of water and air. Equation \ref{eq:tetens} is a Tetens formula, while equation \ref{eq:magic} is derived from the definition of a mixing ratio in \citet[p.~100]{Ambaum2010}. \\
 By default, $E_r$ was given a value based on the average temperature over the domain, as per equation \ref{eq:condrate}; however, the value was varied experimentally to test model stability. \\
 It is assumed that since the fluid advects unidirectionally across the space from one side to the other, we can have the fluid being spontaneously created on the source side and destroyed on the other: that is, we have a fixed value boundary condition at the left edge and no boundary condition at the right edge. In particular, it is assumed that the fluid off the left edge of the grid has the same temperature (and so $r_{vs}$) of the leftmost cell on the grid, thus
 \begin{align}
@@ -128,7 +128,7 @@ r_{v,-1} &= r_{vs,0} \label{eq:a} \\
 r_{l,-1} &= r_{v,0}+r_{l,0}-r_{vs,0} \label{eq:b}
 \end{align}
 such that the fluid there is in a steady state (as aforementioned in the context of equation \ref{eq:2}) and has the same $r_v+r_l$ as the leftmost cell. \\
-For simplicity, here the advection process is represented by a forwards-in-time backwards-in-space (FTBS) finite difference method. (N: For stability and boundedness, advection and phase changes are treated with operator splitting.) We thus end up with the $r_v$ relation
+For simplicity, here the advection process is represented by a forwards-in-time backwards-in-space (FTBS) finite difference method. In addition, in order to more easily ensure stability with advection and state changes interacting with each other, the two processes are treated with operator splitting. We thus end up with the $r_v$ relation
 \begin{align} \label{eq:4}
 r'_{v,i} &= r^n_{v,i} + \min\left(\Delta t\frac{r_{vs,i} - r^n_{v,i}}{E_r},r^n_{l,i}\right) \\ \label{eq:5}
 r^{n+1}_{v,i} &= r'_{v,i} - c\left(r'_{v,i} - r'_{v,i-1}\right)
@@ -138,31 +138,31 @@ and likewise for $r_l$
 r'_{l,i} &= r^n_{l,i} - \min\left(\Delta t\frac{r_{vs,i} - r^n_{v,i}}{E_r},r^n_{l,i}\right) \\ \label{eq:7}
 r^{n+1}_{l,i} &= r'_{l,i} - c\left(r'_{l,i} - r'_{l,i-1}\right)
 \end{align}
-where $r'$ represent operation-intermediate values, $i$ and $n$ are indices of space and time respectively, and $c=u \Delta t/\Delta x$ is the Courant number. \\
+where $r'$ represent operation-intermediate values, $i$ and $n$ are indices of space and time respectively, and $c=u \Delta t/\Delta x$ is a Courant number. \\
 The concern now is how the behaviour of this model varies depending on $E_r$ and $c$. For simplicity, $\Delta t$ and $\Delta x$ are kept constant such that $u$ is the only component of $c$ that is varied.
 
 \section{Numerical analysis of the system}
 We can now perform numerical analysis of the method to predict its stability. \\
 Let us temporarily ignore $r_l$ and focus only on $r_v$. By approximating $r_{vs}$ as uniform over the domain, we can use $S=r_v-r_{vs}$ to rewrite equations \ref{eq:4}, \ref{eq:5}, \ref{eq:6} and \ref{eq:7} as
 \begin{align}
-S'_i &= S_i - \Delta t\frac{S_i}{E_r}		\nonumber \\
-S'_i &= \left(1-\frac{\Delta t}{E_r}\right)S_i	\nonumber \\
-S''_i &= S'_i - c\left(S'_i - S'_{i-1}\right)		\nonumber \\
-S''_i &= \left(1-c\right)S'_i + cS'_{i-1}		\nonumber \\
-S''_i &= \left(1-c\right)\left(1-\frac{\Delta t}{E_r}\right)S_i + c\left(1-\frac{\Delta t}{E_r}\right)S_{i-1}	\label{eq:9}
+S'_i &= S^n_i - \Delta t\frac{S^n_i}{E_r}		\nonumber \\
+S'_i &= \left(1-\frac{\Delta t}{E_r}\right)S^n_i	\nonumber \\
+S^{n+1}_i &= S'_i - c\left(S'_i - S'_{i-1}\right)		\nonumber \\
+S^{n+1}_i &= \left(1-c\right)S'_i + cS'_{i-1}		\nonumber \\
+S^{n+1}_i &= \left(1-c\right)\left(1-\frac{\Delta t}{E_r}\right)S^n_i + c\left(1-\frac{\Delta t}{E_r}\right)S^n_{i-1}	\label{eq:9}
 \end{align}
-From this, we take $\epsilon$ to be the error between the model's numerical solution to the PDE and the analytical solution, and assume that since the numerical and analytical solutions solve the PDE, $\epsilon$ must be a solution as well. (N: EXPLAIN WHY THIS CAN BE DONE)
+From this, we take $\epsilon$ to be the error between the model's numerical solution to the PDE and the analytical solution. Since the numerical and analytical solutions solve the PDE, $\epsilon$, as the difference between them, must solve it as well.
 \begin{align} \nonumber
-\epsilon''_i &= \left(1-c\right)\left(1-\frac{\Delta t}{E_r}\right)\epsilon_i + c\left(1-\frac{\Delta t}{E_r}\right)\epsilon_{i-1} \\
+\epsilon^{n+1}_i &= \left(1-c\right)\left(1-\frac{\Delta t}{E_r}\right)\epsilon^n_i + c\left(1-\frac{\Delta t}{E_r}\right)\epsilon^n_{i-1} \\
 \label{eq:10} \text{i.e.\quad}
 \epsilon^{t+\Delta t}_i &= \left(1-c\right)\left(1-\frac{\Delta t}{E_r}\right)\epsilon^t_i
 + c\left(1-\frac{\Delta t}{E_r}\right)\epsilon^t_{i-1}
 \end{align}
-Furthermore, let us assume that $\epsilon$ can be represented by the Fourier series
+Furthermore, let us assume that $\epsilon$ can be represented by a Fourier series
 \begin{equation} \label{eq:11}
 \epsilon = \sum_{\forall k}\left(e^{\alpha t}e^{ikx}\right)
 \end{equation}
-for some growth rate $\alpha$, and for various wavenumbers $k$ at each $\epsilon_i$, and that each individual summand is itself a solution. Substituting the summands from equation \ref{eq:11} into equation \ref{eq:10} gives us
+for some growth rate $\alpha$, and for various wavenumbers $k$ at each $\epsilon_i$. Substituting the summands from equation \ref{eq:11} into equation \ref{eq:10} gives us
 \begin{align*}
 e^{\alpha\left(t+\Delta t\right)}e^{ikx}
 &= \left(1-c\right)\left(1-\frac{\Delta t}{E_r}\right)e^{\alpha t}e^{ikx}
@@ -175,11 +175,11 @@ e^{\alpha\Delta t}
 e^{\alpha\Delta t}
 &= \left(1-\frac{\Delta t}{E_r}\right)\left(1-c+c\cos\left(k\Delta x\right)-ic\sin\left(k\Delta x\right)\right)
 \end{align*}
-In predicting the system's stability, we are interested in how $\epsilon$ grows over time, or equivalently how the summands grow. In fact the growth rate of the summands is simply
+In predicting the system's stability, we are interested in how $\epsilon$ grows over time, or equivalently how the summands typically grow. In fact the growth rate of a summand is simply
 \[
 \left|\frac{\epsilon^{n+1}_i}{\epsilon^n_i}\right| = \left|\frac{e^{\alpha\left(t+\Delta t\right)}e^{ikx}}{e^{\alpha t}e^{ikx}}\right| = \left|e^{\alpha\Delta t}\right|
 \]
-and we can ensure stability if the growth rate does not exceed $1$, thus
+We can ensure stability if the growth rate does not exceed $1$, thus
 \begin{align}
 \left|e^{\alpha\Delta t}\right|\leq 1 \Leftrightarrow
 \left|e^{\alpha\Delta t}\right|^2&\leq 1 \Leftrightarrow
@@ -263,27 +263,26 @@ Plots showing the behaviour of $L$ can be seen in figure \ref{fig:exempla2}.
 \caption{Various plots of $L$ over time for different values of $E_r$ and $c$. The horizontal axes are in time up to either $t=50$ or whenever $L>1$, whichever occurs first. The vertical axes are in space across the domain.}
 \label{fig:exempla2}
 \end{figure}
-As mentioned previously, although oscillations may be suppressed after instabilities arise, the instabilities nevertheless can generate a large amount of energy in the system.
+As mentioned previously, although oscillations may be suppressed after instabilities arise, the instabilities can generate a large amount of energy in the system as they grow. This can be seen plainly in the top row of plots in figure \ref{fig:exempla2}. \\
+However, it can take a very long time before the instabilities may become large enough to see, whether they continue to grow without limit or not. Because of this, it is impossible to represent the model's behaviour comprehensively. Nevertheless, a plot showing the behaviour of $L$ up to $t=50$ is shown in figure \ref{fig:stable_alt}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{stable_alt.png}
+\caption{Two plots of energy against $E_r$ (horizontal axes) and $c$ (vertical axes). The right plot shows the value of $L$ at $t=50$, while the left plot shows the maximum value that $L$ attains before that time.}
+\label{fig:stable_alt}
+\end{figure}
+For $c$ slightly greater than 1, the system's instabilities grow very slowly (taking longer than $t=50$ to become significant), so the border between stability and instability appears to be slightly greater than $c=1$. The apparently ``spotty'' border is due to numerical imprecision. \\
+The left ``edge of stability'' is similar to that seen in figure \ref{fig:stability_pred} (meeting $E_r=\Delta t/2$ at $c=0$), but we find the significant difference that the system is \emph{not} stable for $c>1$ and $E_r\approx\Delta t$. The large difference is likely because of the fact that our analysis is simplified: most significantly, we have treated $r_{vs}$ as constant over the domain, when in fact it is not. (N: ANYTHING MORE TO BE SAID?)
 
-%Generally, $\Delta R$ oscillates over time (that is, $R$ steps up and down between timesteps) and always at first increases in magnitude. Thereafter, two variations in behaviour can occur: either the oscillations continue to grow without limit, or $\Delta R$ will begin to decrease in magnitude at some point; and either the oscillations will approach $0$ (not necessarily reaching it), or will become steady at some finite non-zero value. \\
-%It is the case of the oscillations approaching $0$ that we desire, so we can investigate how many timesteps it takes for $\Delta R$ to fall in magnitude below some small threshold value. A plot produced using the condition
-%\begin{equation}
-%\left|\frac{\Delta R}{R|_{t=0}}\right|<10^{-5}		\label{eq:variat}
-%\end{equation}
-%can be seen in figure \ref{fig:stable_real}. (N: ALTERNATE METHOD THAT ACTUALLY WORKS)
-%\begin{figure}[H]
-%\centering
-%\includegraphics[width=\textwidth]{stable_real.png}
-%\caption{A plot showing the first time $t\in(\Delta t,50)$ for which condition \ref{eq:variat} is true. White regions indicate that the condition failed to be true before the time limit $t\geq 50$.}
-%\label{fig:stable_real}
-%\end{figure}
-%It is obvious that the boundaries of the dark region (largely of stability) closely match those of the yellow region (of total stability) in figure \ref{fig:stability_pred}. However, two areas of significant difference can be seen. \\
 %In the region of $E_r<0.05$, we can see that the system can sometimes approach a steady state. This is the region where instabilities arise from the small $E_r$ $\Leftrightarrow$ fast evaporation and condensation (naturally at the boundaries of regions of different temperature), but where these instabilities are then suppressed by the advection. Nevertheless, the instabilities just occuring at all can result in unphysical values for $r_v$ and $r_l$, so this behaviour is undesirable. \\
-%We also strangely find some interesting striping in the top-right region where $c$ is large and $E_r$ is large. Since these regions are predicted to be unstable, we can assume that model stability here is dependent on model resolution, and that instability would appear here if the resolution or numerical precision were to be improved. \\
-%(N: MENTION HOW THIS ONLY WORKS BECAUSE OF FTBS)
+%We also strangely find some interesting striping in the top-right region where $c$ is large and $E_r$ is large. Since these regions are predicted to be unstable, we can assume that model stability here is dependent on model resolution, and that instability would appear here if the resolution or numerical precision were to be improved.
 
 \section{Implicit treatment of evaporation and condensation}
-legue
+As mentioned in the introduction, the fact that $E_r$ is limited by $\Delta t$ is awkward, as it means that we cannot have phase changes occur at an arbitrary rate, restricting how we can represent processes realistically. We can get around this by representing the processes which are dependent on $E_r$ (evaporation and condensation) with an implicit method: that is, with
+\[
+r'_v = r_v + \min\left(\Delta t\frac{r_{vs} - r'_v}{E_r},r_l\right)
+\]
+as the equivalent to equation \ref{eq:2}. Since (N: DESCRIBE HOW IMPLICIT METHOD IS SUPPOSED TO WORK).
 
 \section{Numerical analysis of the implicit method}
 Using the same methods as used previously with the explicit method, we can perform numerical analysis of the implicit method to see how its predicted stability differs.
@@ -311,6 +310,33 @@ Stability of the system is thus expected where
 c^2 &\leq c \Leftrightarrow c \leq 1.
 \end{align*}
 We thus find that when the implicit method is used, restrictions on stability depend only on $c$: no limits on $E_r/\Delta t$ are necessary, making it possible to set $E_r$ as low as possible to realistically represent state changes.
+
+\section{The model with the implicit method}
+We can also analyse the model's actual behaviour in exactly the same way as with the explicit method. Equivalents of figures \ref{fig:samplot}, \ref{fig:exempla2} and \ref{fig:stable_alt} are given as figures \ref{fig:samplot_imp2}, \ref{fig:exempla_alt_imp} and \ref{fig:stable_imp} respectively.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{samplot_imp2.png}
+\caption{Various plots of $r_v$, using the model with the implicit method, over a time period $t\in[0,10]$, for different values of $E_r$ and $c$. The horizontal axes are in time up to $t=10$, and the vertical axes are in space across the domain. Note that parts of the lightest and darkest regions actually go outside the limits of $[-0.01,0.02]$.}
+\label{fig:samplot_imp2}
+\end{figure}
+(N: ANYTHING TO SAY ON THESE TWO?)
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{exempla_alt_imp.png}
+\caption{Various plots of $L$ over time, using the model with the implicit method, for different values of $E_r$ and $c$. The horizontal axes are in time up to either $t=50$ or whenever $L>1$, whichever occurs first. The vertical axes are in space across the domain.}
+\label{fig:exempla_alt_imp}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{stable_imp.png}
+\caption{A plot of energy against $E_r$ (horizontal axes) and $c$ (vertical axes), showing the maximum value that $L$ attains before $t=50$.}
+\label{fig:stable_imp}
+\end{figure}
+We indeed find that stability can be achieved for $c<1$ and any arbitrary $E_r$, although because the instabilities for $c$ slightly greater than 1 grow very slowly, the border does not appear to be exactly at $c=1$, just as in figure \ref{fig:stable_imp}. \\
+(N: WHAT NOW?)
+
+\section{Conclusion}
+(N: WHAT USEFUL CAN BE SAID THAT HASN'T BEEN SAID ALREADY?)
 
 \newpage
 \bibliography{references}

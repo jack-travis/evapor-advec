@@ -7,7 +7,7 @@ Tf = numpy.load("temp_field.npy")
 rv = numpy.load("vapour_init.npy")
 rl = numpy.load("liquid_init.npy")
 
-import model_implicit
+import model_scaled
 
 max_u = consts["L"]/(consts["gs"]*consts["Dt"])
 
@@ -15,10 +15,11 @@ print "Loaded, running simulations"
 
 maxduration = 50
 
-res = 60
+res = 120
 C_range = numpy.linspace(0,3,res)
 Er_range = numpy.linspace(0,3*consts["Dt"],res+1)[1:]
 
+R_max = numpy.zeros((len(C_range),len(Er_range)))
 R_settle = numpy.zeros((len(C_range),len(Er_range)))
 
 for Ci in range(len(C_range)):
@@ -26,7 +27,7 @@ for Ci in range(len(C_range)):
         C = C_range[Ci]
         Er = Er_range[Ei]
         #
-        c = model_implicit.core(consts,rv,rl,Tf)
+        c = model_scaled.core(consts,rv,rl,Tf)
         c.u = C * c.Dx / c.Dt
         c.initialise()
         c.Er = Er
@@ -45,14 +46,28 @@ for Ci in range(len(C_range)):
             #    print c.t
             #    printu = False
         #
-        R_settle[Ci,Ei] = endiff_max
+        R_max[Ci,Ei] = endiff_max
+        R_settle[Ci,Ei] = endiff
     print "done c={0}".format(C_range[Ci])
 
 X,Y = numpy.meshgrid(Er_range,C_range)
-RS = numpy.ma.masked_array(R_settle, numpy.isinf(R_settle))
-pyplot.pcolor(X,Y,RS,vmin=0.,vmax=1.)
+
+pyplot.subplot(121)
+RM = numpy.ma.masked_array(R_max, numpy.isinf(R_max))
+RM = numpy.ma.masked_array(RM, numpy.isnan(RM))
+pyplot.pcolor(X,Y,RM,vmin=0.,vmax=10.)
 pyplot.colorbar()
 pyplot.title(("Maximum $L$ achieved for $t<{0}$").format(maxduration))
 pyplot.xlabel("$E_r$")
 pyplot.ylabel("$c$")
+
+pyplot.subplot(122)
+RS = numpy.ma.masked_array(R_settle, numpy.isinf(R_settle))
+RS = numpy.ma.masked_array(RS, numpy.isnan(RS))
+pyplot.pcolor(X,Y,RS,vmin=0.,vmax=10.)
+pyplot.colorbar()
+pyplot.title(("$L$ at $t={0}$").format(maxduration))
+pyplot.xlabel("$E_r$")
+pyplot.ylabel("$c$")
+
 pyplot.show(block=False)

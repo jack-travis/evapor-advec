@@ -15,11 +15,11 @@ print "Loaded, running simulations"
 
 maxduration = 50
 
-res = 120
+res = 90
 C_range = numpy.linspace(0,3,res)
 Er_range = numpy.linspace(0,3*consts["Dt"],res+1)[1:]
 
-R_max = numpy.zeros((len(C_range),len(Er_range)))
+#R_max = numpy.zeros((len(C_range),len(Er_range)))
 R_settle = numpy.zeros((len(C_range),len(Er_range)))
 
 for Ci in range(len(C_range)):
@@ -33,38 +33,40 @@ for Ci in range(len(C_range)):
         c.Er = Er
         #
         energy_init = (c.vapour ** 2).sum() + (c.liquid ** 2).sum()
-        endiff_max = 0.0
+        #endiff_max = 0.0
         #
         #printu = True
         while c.t < maxduration:
             c.step()
             energy_now = (c.vapour ** 2).sum() + (c.liquid ** 2).sum()
-            endiff = abs(energy_now - energy_init) / energy_init
-            if endiff_max < endiff:
-                endiff_max = endiff
+            if numpy.isnan(energy_now) or numpy.isinf(energy_now):
+                break
+            #endiff = abs(energy_now - energy_init) / energy_init
+            #if endiff_max < endiff:
+            #    endiff_max = endiff
             #elif printu:
             #    print c.t
             #    printu = False
         #
-        R_max[Ci,Ei] = endiff_max
-        R_settle[Ci,Ei] = endiff
+        #R_max[Ci,Ei] = endiff_max
+        R_settle[Ci,Ei] = (energy_now - energy_init) / energy_init
     print "done c={0}".format(C_range[Ci])
 
 X,Y = numpy.meshgrid(Er_range,C_range)
 
-pyplot.subplot(121)
-RM = numpy.ma.masked_array(R_max, numpy.isinf(R_max))
-RM = numpy.ma.masked_array(RM, numpy.isnan(RM))
-pyplot.pcolor(X,Y,RM,vmin=0.,vmax=10.)
-pyplot.colorbar()
-pyplot.title(("Maximum $L$ achieved for $t<{0}$").format(maxduration))
-pyplot.xlabel("$E_r$")
-pyplot.ylabel("$c$")
+#pyplot.subplot(121)
+#RM = numpy.ma.masked_array(R_max, numpy.isinf(R_max))
+#RM = numpy.ma.masked_array(RM, numpy.isnan(RM))
+#pyplot.pcolor(X,Y,RM,vmin=0.,vmax=10.)
+#pyplot.colorbar()
+#pyplot.title(("Maximum $L$ achieved for $t<{0}$").format(maxduration))
+#pyplot.xlabel("$E_r$")
+#pyplot.ylabel("$c$")
 
-pyplot.subplot(122)
+#pyplot.subplot(122)
 RS = numpy.ma.masked_array(R_settle, numpy.isinf(R_settle))
 RS = numpy.ma.masked_array(RS, numpy.isnan(RS))
-pyplot.pcolor(X,Y,RS,vmin=0.,vmax=10.)
+pyplot.pcolor(X,Y,RS,vmin=-0.1,vmax=1.0)
 pyplot.colorbar()
 pyplot.title(("$L$ at $t={0}$").format(maxduration))
 pyplot.xlabel("$E_r$")

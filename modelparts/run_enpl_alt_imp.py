@@ -40,7 +40,7 @@ for Ci in range(len(C_range))[::-1]:
             c.step()
             R_t.append(c.t)
             energy_now = (c.vapour ** 2).sum() + (c.liquid ** 2).sum()
-            endiff = abs(energy_now - energy_init)/energy_init
+            endiff = (energy_now - energy_init)/energy_init
             R_energy.append(endiff)
             if c.t > c.Dt and abs(endiff) > thresh_high:
                 break

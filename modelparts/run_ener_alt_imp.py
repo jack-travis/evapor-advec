@@ -32,27 +32,29 @@ for Ci in range(len(C_range)):
         c.Er = Er
         #
         energy_init = (c.vapour ** 2).sum() + (c.liquid ** 2).sum()
-        endiff_max = 0.0
+        #endiff_max = 0.0
         #
         #printu = True
         while c.t < maxduration:
             c.step()
             energy_now = (c.vapour ** 2).sum() + (c.liquid ** 2).sum()
-            endiff = abs(energy_now - energy_init) / energy_init
-            if endiff_max < endiff:
-                endiff_max = endiff
+            if numpy.isnan(energy_now) or numpy.isinf(energy_now):
+                break
+            #endiff = (energy_now - energy_init) / energy_init
+            #if abs(endiff_max) < abs(endiff):
+            #    endiff_max = endiff
             #elif printu:
             #    print c.t
             #    printu = False
         #
-        R_settle[Ci,Ei] = endiff_max
+        R_settle[Ci,Ei] = (energy_now - energy_init) / energy_init
     print "done c={0}".format(C_range[Ci])
 
 X,Y = numpy.meshgrid(Er_range,C_range)
 RS = numpy.ma.masked_array(R_settle, numpy.isinf(R_settle))
-pyplot.pcolor(X,Y,RS,vmin=0.,vmax=1.)
+pyplot.pcolor(X,Y,RS,vmin=-0.1,vmax=0.1)
 pyplot.colorbar()
-pyplot.title(("Maximum $L$ achieved for $t<{0}$").format(maxduration))
+pyplot.title(("$L$ at $t={0}$").format(maxduration))
 pyplot.xlabel("$E_r$")
 pyplot.ylabel("$c$")
 pyplot.show(block=False)

@@ -7,12 +7,12 @@
 \usepackage{amsmath}		%Standard maths
 \usepackage{amssymb}		%Standard maths
 \usepackage{caption}
-\usepackage{listings}
+%\usepackage{listings}
 \usepackage{natbib}
 
 \captionsetup[figure]{font=footnotesize}
 \linespread{1.3}		%1.5 spacing
-\lstset{language=Python,breaklines}		%,showtabs=true,tab=\rightarrowfill
+%\lstset{language=Python,breaklines}		%,showtabs=true,tab=\rightarrowfill
 
 \begin{document}
 
@@ -26,8 +26,8 @@ On the Representation of Evaporation and Condensation in Weather Models}
 \maketitle
 
 \section{Abstract}
-This study investigates how evaporation and condensation may behave under advection in a weather model. Of interest are extreme cases where a large amount of evaporation or condensation occurs over a short time/space interval, such as the case of air being advected through a front. In such cases, models may predict more fluid undergoing evaporation or condensation than there is liquid or vapour available to evaporate or condense, leading to invalid values for fluid properties, possibly including instability. \\
-The primary subject is to examine and compare different methods of preventing adverse effects from occurring: in particular, we will be comparing a model in which evaporation and condensation are represented by an implicit method to one in which they are explicit as normal. Representing phase changes implicitly in this way is not known to have been widely used or studied, and so is of particular interest of study to us. \\
+This study investigates how evaporation and condensation may behave under advection in a weather model. Of interest are extreme cases where a large amount of evaporation or condensation occurs over a short time/space interval, such as the case of air being advected through a front. In such cases, models may predict more fluid undergoing evaporation or condensation than there is liquid or vapour available to evaporate or condense, leading to unphysical values for fluid properties, and instability. \\
+The primary subject is to examine and compare different methods of preventing adverse effects from occurring: in particular, we will produce a model in which evaporation and condensation are represented by an implicit numerical method, and compare this model to one in which the numerical method for phase changes is explicit, as is typical in weather models. Representing phase changes implicitly in this way is not known to have been widely used or studied, and so is of particular interest. \\
 We show in this study that although both models produce useful results, the implicit method allows for more flexibility in the realistic representation of phase changes.
 
 \null \vfill
@@ -39,36 +39,38 @@ A dissertation submitted in partial fulfilment of the requirement for the MSc de
 \newpage
 
 \section{Introduction}
-The topic of this work is the handling of evaporation and condensation (considered as a single process) in weather models: in particular, how a sudden state change of a large amount of fluid, e.g. in passing through a front, can cause numerical instabilities and/or unphysical values for fluid properties to arise. Ideally, we would like to be know what conditions result in instability, so that we may recommend changes in how evaporation and condensation are represented in models to prevent such issues occuring. \\
-\citet{GS1990} shows an idealised situation featuring the evaporation and condensation of fluid with advection over a space, and compares a numerical solution used to solve the problem with an analytic solution. It is stated that in numerical solution, unstable oscillations can easily occur at a boundary over which phase changes occur, and that although it helps to use a monotone numerical method (i.e. itself not producing oscillations at discontinuities) for the advection, stability cannot be guaranteed even with such a method. \citeauthor{GS1990} state that ``to our knowledge there is no universal solution to this problem'', and go on to experiment with a combination of a method for advection that is monotone but diffusive and an ``anti-diffusion'' process that attempts to reverse the errors that the advection method introduces. \\
-Nevertheless, \citeauthor{GS1990} are concerned mostly with errors from the numerical method representing advection, not evaporation and condensation. In fact, throughout literature on models for advection and condensation, little has been said on instabilities that rise from how state changes are represented. No one has yet presented any method attempting to ensure stability for arbitrary rates of evaporation and condensation, in the same way as \citeauthor{GS1990} for advection. The reason for this is simple: since weather models tend to have a very fine spatial resolution, it is necessary to have a coarse timescale for the sake of computational speed. At such a long timescale, evaporation and condensation occur over very small timeframes, much less than a timestep, and so many models simply treat the phase changes as instantaneous. \\
-As an example, \citet[p.~2095]{Wilson2008} mentions the method of \citet{Smith1990} of representing evaporation and condensation, there in comparison with other methods. In \citeauthor{Smith1990}, like various other studies, it is assumed (as aforementioned) that evaporation and condensation can be treated as instantaneous. Consequently, the model used simply has the total amount of fluid as a prognostic variable, from which the proportions of liquid and vapour can be diagnosed from air and fluid properties, bypassing any representation of the physical processes of evaporation and condensation entirely. \\
-As mentioned by \citeauthor{Wilson2008}, such a method is more commonly used in weather models than the alternative (treating vapour and liquid separately), as the diagnosis of variables can easily guarantee that their values are physical; however, the diagnosis is based upon a PDF of the variability of the system's properties, and it is difficult to tell how changes to those properties can affect the PDF's shape, making analysis of the model difficult. In addition, treating evaporation and condensation as instantaneous does not simulate the processes themselves in any realistic manner. \\
-\citeauthor{Wilson2008} also discusses the example of \citet{Tiedtke1993}, in whose method vapour and liquid variables are prognostic (as we will be doing). This way, we have the simple advantage that we can easily represent physical processes in terms of changes by timestep of the system's properties. However, this makes it very difficult to ensure that realistic values and system behaviours can be kept. \\
-For us to have a numerical model that realistically represents phase changes, while ensuring stability for arbitrary rates of evaporation and condensation, is the primary goal of this project. To achieve this goal, we will have to investigate ways of overcoming problems in achieving stability for the numerical methods that are used. Overall, two differing numerical methods for representing evaporation and condensation will be studied and compared: a method similar by large to that of \citet{Tiedtke1993}, and an innovative method by which the change of fluid concentrations due to phase changes is treated implicitly.
+The topic of this work is the handling of evaporation and condensation (considered as a single process) in weather models: in particular, how a sudden state change of a large amount of fluid, e.g. in passing through a front, can cause numerical instabilities and unphysical values for fluid properties to arise. Ideally, we would like to be know what conditions result in instability, so that we may recommend changes in how evaporation and condensation are represented in models to prevent such issues occuring. \\
+\citet{GS1990} show an idealised situation featuring the evaporation and condensation of fluid with advection over a space, and compares a numerical solution used to solve the problem with an analytic solution. It is stated that in numerical solution, unstable oscillations can easily occur at a boundary over which phase changes occur, and that although it helps to use a monotone numerical method (i.e. itself not producing oscillations at discontinuities) for the advection, stability cannot be guaranteed even with such a method. \citeauthor{GS1990} state that ``to our knowledge there is no universal solution to this problem'', and go on to experiment with a combination of a method for advection that is monotone but diffusive and an ``anti-diffusion'' process that attempts to reverse the errors that the advection method introduces. \\
+Nevertheless, \citeauthor{GS1990} are concerned mostly with errors from the numerical method representing advection, not evaporation and condensation. In fact, throughout literature on models for advection and condensation, little has been said on instabilities that rise from how state changes are represented. No one has yet presented any method attempting to ensure stability for arbitrary rates of evaporation and condensation, in the same way as that of \citeauthor{GS1990} for advection. The reason for this is simple: since weather models tend to have a very fine spatial resolution, it is necessary to have a coarse timescale for the sake of computational speed. Under this, evaporation and condensation occur over very small timeframes, much less than a timestep. It is then seen as fair in many models to simply treat the phase changes as instantaneous. \\
+As an example, \citet[p.~2095]{Wilson2008} mention the method of \citet{Smith1990} of representing evaporation and condensation, in comparison with other methods. \citeauthor{Smith1990}, like various others, assumed that evaporation and condensation can be treated as instantaneous in the model. Consequently, the model simply has the total amount of fluid as a prognostic variable, from which the proportions of liquid and vapour can be diagnosed from air and fluid properties, bypassing any representation of the physical processes of evaporation and condensation entirely. \\
+As mentioned by \citeauthor{Wilson2008}, such a method is more commonly used in weather models than the alternative (treating vapour and liquid separately), as the diagnosis of variables can easily guarantee that their values are physical; however, the diagnosis is based upon probability distributions of the system's properties, and it is difficult to tell how changes to those properties can affect the PDF's shape, making analysis of the model difficult. In addition, treating evaporation and condensation as instantaneous does not simulate the processes themselves in any realistic manner. \\
+\citeauthor{Wilson2008} also discuss the example of \citet{Tiedtke1993}, in whose method vapour and liquid variables are prognostic (as we will be doing). This way, we have the simple advantage that we can easily represent physical processes in terms of changes by timestep of the system's properties. However, this makes it very difficult to ensure that realistic values and system behaviours can be kept. \\
+For us to have a numerical model that realistically represents phase changes, while ensuring stability for arbitrary rates of evaporation and condensation, is the primary goal of this project. To achieve this goal, we will have to investigate ways of overcoming problems in achieving stability for the numerical methods that are used. Overall, two differing numerical methods for representing evaporation and condensation will be studied and compared: an explicit method similar by large to that of \citet{Tiedtke1993}, and an innovative method by which changes of fluid concentrations due to phase changes are treated implicitly.
 
 \section{Description of test case}
-For the sake of study, an example problem has been constructed in which fluid advects continuously through a region of varying temperature, thus variously evaporating and condensing in different sections. The space is one-dimensional in representation (only horizontal fluid movement is considered), and for convenience the space is given a length of $1$ arbitrary space unit. \\
+For the sake of study, an example problem has been constructed in which fluid advects continuously through regions of varying temperature, thus evaporating and condensing depending on state. Only evaporation and condensation are considered for phase changes: models like that of \citet{Tiedtke1993} consider other processes involving water, such as precipitation and ice formation, but we will be ignoring other processes for the sake of simplicity. \\
+The space is one-dimensional in representation, as only horizontal fluid movement is considered. For convenience, the space is given a length of $L=1$ arbitrary space unit. \\
 Fluid properties such as air density, air pressure and background fluid velocity are assumed to be approximately even over the domain, as would be generally expected for fluid advection in the horizontal; the only property that varies over the space is temperature. \\
-For simplicity, a basic ``square'' temperature field was used. Also devised was an experimental ``triangular'' field, expected to more realistically represent a temperature boundary, as it is formed as if fixing the temperature in some parts of the domain and allowing heat to diffuse to elsewhere. This field was not used in any model runs for this study, but it may be of interest for future work. \\
+For simplicity, a basic ``square'' temperature field was used. Also devised was an experimental ``triangular'' field, expected to more realistically represent a temperature boundary, as it is as if fixing the temperature in some parts of the domain and allowing heat to diffuse out. This field was not used in any model runs for this study, but it may be of interest for future work. \\
 The square field is defined by
-\[
+\begin{equation}
 T_i = \begin{cases}
-20^{\circ}\text{C} & ~:~ \frac{1}{3}L \leq i\Delta x < \frac{2}{3}L \\
+20^{\circ}\text{C} & ~:~ \frac{1}{3}L \leq x < \frac{2}{3}L \\
 10^{\circ}\text{C} & ~
-\end{cases}
-\]
+\end{cases} \label{eq:square_field}
+\end{equation}
 while the triangular field is defined by
-\[
+\begin{equation}
 T_i = \begin{cases}
-10^{\circ}\text{C} & ~:~ i\Delta x < \frac{1}{6}L \\
-\frac{60}{L}i\Delta x & ~:~ \frac{1}{6}L \leq i\Delta x < \frac{1}{3}L \\
-20^{\circ}\text{C} & ~:~ \frac{1}{3}L \leq i\Delta x < \frac{2}{3}L \\
-30-\frac{60}{L}i\Delta x & ~:~ \frac{2}{3}L \leq i\Delta x < \frac{5}{6}L \\
-10^{\circ}\text{C} & ~:~ \frac{5}{6}L \leq i\Delta x \\
-\end{cases}
-\]
-The two temperature fields can be seen in figure \ref{fig:tempfields}.
+10^{\circ}\text{C} & ~:~ x < \frac{1}{6}L \\
+\left(\frac{60}{L}i\Delta x\right) ~^{\circ}\text{C} & ~:~ \frac{1}{6}L \leq x < \frac{1}{3}L \\
+20^{\circ}\text{C} & ~:~ \frac{1}{3}L \leq x < \frac{2}{3}L \\
+\left(30-\frac{60}{L}i\Delta x\right) ~^{\circ}\text{C} & ~:~ \frac{2}{3}L \leq x < \frac{5}{6}L \\
+10^{\circ}\text{C} & ~:~ \frac{5}{6}L \leq x \\
+\end{cases} \label{eq:triangular_field}
+\end{equation}
+for $x\in[0,L]$. \\
+The two temperature fields can be seen in Figure \ref{fig:tempfields}.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{tempfields2.png}
@@ -80,17 +82,17 @@ As based on a formula taken from \citet[p.~2920]{BF2002} apud \citet{RH1983}, ev
 \begin{equation} \label{eq:1}
 \frac{\partial r_v}{\partial t}|_{\text{cond}}=\frac{r_{vs} - r_v}{E_r}
 \end{equation}
-for a constant evaporation-condensation timescale $E_r$, where $r_{vs}$ is the saturation mixing ratio. However, \citeauthor{BF2002} actually uses the formula
+for a constant evaporation-condensation timescale $E_r$, where $r_{vs}$ is the saturation mixing ratio. However, \citeauthor{BF2002} actually use the formula
 \begin{equation}
 \frac{\partial r_v}{\partial t}|_{\text{cond}}=\frac{r_{vs} - r_v}{\Delta t E_r}	\label{eq:artificial}
 \end{equation}
-This differs from equation \ref{eq:1} in two ways. Firstly, the $\Delta t$ component means that $\Delta r_v|_{\text{cond}}$ (the change in $r_v$ due to $E_r$ at each timestep) is \emph{not} dependent on $\Delta t$. This $\Delta t$ component was added to the equation artificially to make stability of the system easier to achieve, but for the rate to not vary with timescale is unrealistic, and so here the artificial component has been removed (which means that our $E_r$ is of different units). \\
+This differs from Equation \ref{eq:1} in two ways. Firstly, the $\Delta t$ component means that $\Delta r_v|_{\text{cond}}$ (the change in $r_v$ due to $E_r$ at each timestep) is \emph{not} dependent on $\Delta t$. This $\Delta t$ component was added to the equation artificially to make stability of the system easier to achieve, but for the rate to not vary with timescale is unrealistic, and so here the artificial component has been removed (which means that our $E_r$ is of different units). \\
 Secondly, $E_r$ was taken by \citeauthor{BF2002} to vary in temperature according to the formula
 \begin{equation}
 E_r = 1+\frac{L_v^2r_{vs}}{c_pR_vT^2} \label{eq:condrate}
 \end{equation}
 where $L_v$ is the latent heat of evaporation of water, $c_P$ is the specific heat of air, and $R_v$ is the gas constant of water vapour. Since this means varying $E_r$ over the domain, we have instead taken $E_r$ to be constant: it is only $r_{vs}$ which is dependent on $T$ and thus varies over the domain. \\
-Between the evaporation and condensation (as per equation \ref{eq:1}) and the advection, and ignoring the limitation described in equation \ref{eq:2}, we can now produce the PDE
+Between the evaporation and condensation (as per Equation \ref{eq:1}) and the advection, and ignoring the limitation described in Equation \ref{eq:2}, we can now produce the partial differential equation
 \[
 \frac{\text{D} r_v}{\text{D} t}=\frac{\partial r_v}{\partial t}|_{\text{cond}}
 \]
@@ -99,20 +101,20 @@ thus
 \frac{\partial r_v}{\partial t}+u\frac{\partial r_v}{\partial x}=\frac{r_{vs} - r_v}{E_r} \label{eq:3}
 \end{equation}
 where the left side is advection as a material derivative (with a background fluid velocity $u$), and the right side is condensation as a sink/source term. \\
-On the contrary to equation \ref{eq:1}, however, we note that it is unrealistic to allow evaporation if there is no liquid water remaining in the system, and vice versa: this is because $r_v$ or $r_l$ could then attain negative values, naturally resulting in unstable oscillations occuring. In order to prevent this, the change in fluid concentrations due to evaporation or condensation at each timestep is actually taken to be
+On the contrary to Equation \ref{eq:1}, however, we note that it is unrealistic to allow evaporation if there is no liquid water remaining in the system, and likewise for condensation in the case of $r_v=0$. This is because $r_v$ or $r_l$ could then attain negative values, naturally resulting in unstable oscillations. In order to prevent this, the change in fluid concentrations due to evaporation or condensation at each timestep is actually taken to be
 \begin{equation} \label{eq:2}
 \Delta r_v|_{\text{cond}} = \min\left(\Delta t\frac{r_{vs} - r_v}{E_r},r_l\right)
 \end{equation}
 Nevertheless, because of the dependence on $r_{vs} - r_v$, the steady state with respect to evaporation and condensation is where $r_{vs}=r_v$, regardless of the value for $r_l$. \\
-\citet[p.~324]{Jaehn2015} features an alternate way of having dependence on $r_l$, by which the equivalent to equation \ref{eq:1} is effectively
-\[
+\citet[p.~324]{Jaehn2015} features an alternate way of having dependence on $r_l$, by which the equivalent to Equation \ref{eq:1} is effectively
+\begin{equation} \label{eq:jaehn}
 \frac{\partial r_v}{\partial t}|_{\text{cond}} = \frac{\left(r_v-r_{vs}\right)-r_l+\sqrt{\left(r_v-r_{vs}\right)^2+r_l^2}}{\Delta t E_r}
-\]
-This ensures that the transition between dependence and independence of $r_l$ is smooth, rather than having a sharp transition as per our equation \ref{eq:2}. However, though it may possibly be better for achieving stability, it may not be at all realistic to treat phase changes this way, just as with the artificial $\Delta t$ in equation \ref{eq:artificial} (something that \citeauthor{Jaehn2015} also used).
+\end{equation}
+This ensures that the transition between dependence and independence of $r_l$ is smooth, rather than having a sharp transition as per Equation \ref{eq:2}. However, though it may be better for achieving stability, it is not at all realistic to treat phase changes this way, just as with the artificial $\Delta t$ in Equation \ref{eq:artificial} (something that \citeauthor{Jaehn2015} also used).
 
 \section{Description of model}
 We assume that initially the fluid is entirely liquid water, i.e. $r_v = 0$, $r_l = 1$ at all points. From there, evaporation must occur everywhere, at rates depending on the differing temperatures throughout the domain. \\
-The space is subdivided into 90 spatial cells (thus $\Delta x=1/90$ arbitrary space units), with that number being chosen for the convenience of dividing it into three (as in figure \ref{fig:tempfields}). \\
+The space is subdivided into 90 spatial cells (thus $\Delta x=L/90=1/90$ arbitrary space units), with that number being chosen for the convenience of dividing it into three (as in Figure \ref{fig:tempfields}). \\
 Our model simulations always used a timestep of $\Delta t=0.1$ arbitrary time units. \\
 $r_{vs}$ is taken to vary with $T$ based on
 \begin{align}
@@ -122,14 +124,14 @@ e_s &= \begin{cases}
 \end{cases} \label{eq:tetens} \\
 r_{vs} &= B\frac{e_s}{P-e_s} \label{eq:magic}
 \end{align}
-using $T$ in degrees Celsius, where $P$ is pressure and $B\approx0.62$ is the ratio of the molar masses of water and air. Equation \ref{eq:tetens} is a Tetens formula, while equation \ref{eq:magic} is derived from the definition of a mixing ratio in \citet[p.~100]{Ambaum2010}. \\
-By default, $E_r$ was given a value based on the average temperature over the domain, as per equation \ref{eq:condrate}; however, the value was varied experimentally to test model stability. \\
-It is assumed that since the fluid advects unidirectionally across the space from one side to the other, we can have the fluid being spontaneously created on the source side and destroyed on the other: that is, we have a fixed value boundary condition at the left edge and no boundary condition at the right edge. In particular, it is assumed that the fluid off the left edge of the grid has the same temperature (and so $r_{vs}$) of the leftmost cell on the grid, thus
+using $T$ in degrees Celsius, where $P$ is pressure and $B\approx0.62$ is the ratio of the molar masses of water and air. Equation \ref{eq:tetens} is a Tetens formula, while Equation \ref{eq:magic} is derived from the definition of a mixing ratio in \citet[p.~100]{Ambaum2010}. \\
+By default, $E_r$ was given a value based on the average temperature over the domain, as per Equation \ref{eq:condrate}; however, the value was varied experimentally to test model stability. \\
+It is assumed that since the fluid advects unidirectionally across the space from one side to the other, we can have the fluid being spontaneously created on the source side and destroyed on the other, in our case using the left and right sides respectively. This means that we have a fixed value boundary condition at the left edge and no boundary condition at the right edge. In particular, it is assumed that the fluid off the left edge of the grid has the same temperature (and so $r_{vs}$) of the leftmost cell on the grid, thus
 \begin{align}
 r_{v,-1} &= r_{vs,0} \label{eq:a} \\
 r_{l,-1} &= r_{v,0}+r_{l,0}-r_{vs,0} \label{eq:b}
 \end{align}
-such that the fluid there is in a steady state (as aforementioned in the context of equation \ref{eq:2}) and has the same $r_v+r_l$ as the leftmost cell. \\
+such that the fluid there is in a steady state (as aforementioned in the context of Equation \ref{eq:2}) and has the same $r_v+r_l$ as the leftmost cell. \\
 For simplicity, here the advection process is represented by a forwards-in-time backwards-in-space (FTBS) finite difference method. In addition, in order to more easily ensure stability with advection and state changes interacting with each other, the two processes are treated with operator splitting. We thus end up with the $r_v$ relation
 \begin{align} \label{eq:4}
 r'_{v,i} &= r^n_{v,i} + \min\left(\Delta t\frac{r_{vs,i} - r^n_{v,i}}{E_r},r^n_{l,i}\right) \\ \label{eq:5}
@@ -164,23 +166,23 @@ Furthermore, let us assume that $\epsilon$ can be represented by a Fourier serie
 \begin{equation} \label{eq:11}
 \epsilon = \sum_{\forall k}\left(e^{\alpha t}e^{ikx}\right)
 \end{equation}
-for some growth rate $\alpha$, and for various wavenumbers $k$ at each $\epsilon_i$. Substituting the summands from equation \ref{eq:11} into equation \ref{eq:10} gives us
-\begin{align*}
+for some growth rate $\alpha$, and for various wavenumbers $k$ at each $\epsilon_i$. Substituting the summands from Equation \ref{eq:11} into Equation \ref{eq:10} gives us
+\begin{align}
 e^{\alpha\left(t+\Delta t\right)}e^{ikx}
 &= \left(1-c\right)\left(1-\frac{\Delta t}{E_r}\right)e^{\alpha t}e^{ikx}
-+ c\left(1-\frac{\Delta t}{E_r}\right)e^{\alpha t}e^{ik\left(x-\Delta x\right)} \\
++ c\left(1-\frac{\Delta t}{E_r}\right)e^{\alpha t}e^{ik\left(x-\Delta x\right)} \nonumber\\
 e^{\alpha\Delta t}
 &= \left(1-c\right)\left(1-\frac{\Delta t}{E_r}\right)
-+ c\left(1-\frac{\Delta t}{E_r}\right)e^{-ik\Delta x} \\
++ c\left(1-\frac{\Delta t}{E_r}\right)e^{-ik\Delta x} \nonumber\\
 e^{\alpha\Delta t}
-&= \left(1-\frac{\Delta t}{E_r}\right)\left(1-c+ce^{-ik\Delta x}\right) \\
+&= \left(1-\frac{\Delta t}{E_r}\right)\left(1-c+ce^{-ik\Delta x}\right) \nonumber\\
 e^{\alpha\Delta t}
-&= \left(1-\frac{\Delta t}{E_r}\right)\left(1-c+c\cos\left(k\Delta x\right)-ic\sin\left(k\Delta x\right)\right)
-\end{align*}
+&= \left(1-\frac{\Delta t}{E_r}\right)\left(1-c+c\cos\left(k\Delta x\right)-ic\sin\left(k\Delta x\right)\right)		\label{eq:g_def}
+\end{align}
 In predicting the system's stability, we are interested in how $\epsilon$ grows over time, or equivalently how the summands typically grow. In fact the growth rate of a summand is simply
-\[
-\left|\frac{\epsilon^{n+1}_i}{\epsilon^n_i}\right| = \left|\frac{e^{\alpha\left(t+\Delta t\right)}e^{ikx}}{e^{\alpha t}e^{ikx}}\right| = \left|e^{\alpha\Delta t}\right|
-\]
+\begin{equation}\label{eq:growth_rate}
+\left|\frac{\epsilon^{n+1}_i}{\epsilon^n_i}\right| = \left|\frac{e^{\alpha\left(t+\Delta t\right)}e^{ikx}}{e^{\alpha t}e^{ikx}}\right| = \left|e^{\alpha\Delta t}\right|	
+\end{equation}
 We can ensure stability if the growth rate does not exceed $1$, thus
 \begin{align}
 \left|e^{\alpha\Delta t}\right|\leq 1 \Leftrightarrow
@@ -199,7 +201,7 @@ We can ensure stability if the growth rate does not exceed $1$, thus
 for $K\in[0,1]$. Under the assumption that we want stability to be guaranteed for \emph{all} $K$, we can reinterpret the left side of the stability condition as $\max\left(0,4(c^2-c)\right)$. Furthermore, as $E_r$ and $\Delta t$ are both timescales, it is helpful to rewrite them in terms of $A=E_r/\Delta t$. This give us
 \begin{align}
 \frac{\left(A\Delta t\right)^2}{\left(A\Delta t-\Delta t\right)^2}-1 &\geq \max\left(0,4(c^2-c)\right) \nonumber\\
-\left(\frac{A}{A-1}\right)^2 -1 &\geq \max\left(0,4(c^2-c)\right) \nonumber\\
+\left(\frac{A}{A-1}\right)^2 -1 &\geq \max\left(0,4(c^2-c)\right) \label{eq:two_cases} \\
 \text{$0\leq c\leq 1$ case:\quad} \left(\frac{A}{A-1}\right)^2 -1 &\geq 0 \nonumber\\
 \left(\frac{A}{A-1}\right)^2 &\geq 1 \nonumber\\
 A^2 &\geq \left(A-1\right)^2 \nonumber\\
@@ -212,22 +214,22 @@ A &\geq \frac{1}{2}.		\label{eq:stab1} \\
 \left|\frac{A}{A-1}\right| &\geq 2c-1 \nonumber \\
 c &\leq \frac{1}{2}\left(1 + \left|\frac{A}{A-1}\right|\right) 	\label{eq:stab5}
 \end{align}
-Condition \ref{eq:stab1} informs us that in the case of $c<1$ and $A<1/2$, stability is not guaranteed. It can be expected that this is where evaporation and condensation can produce instabilities (due to sufficiently small $A$ $\Leftrightarrow$ fast evaporation and condensation) that advection cannot necessarily eliminate (due to sufficiently small $c$ $\Leftrightarrow$ slow advection). This will result in unphysical values at best (potentially if instabilities occur at all, regardless of whether they are eliminated or not) and growth without bound at worst. \\
-In addition, we find from condition \ref{eq:stab5} that if $c>1$ and $A<1/2$ then
-\begin{align*}
-\frac{A}{A-1} &< -1 \\
-\left|\frac{A}{A-1}\right| &< 1 \\
-1 < c \leq \frac{1}{2}\left(1 + \left|\frac{A}{A-1}\right|\right) &< 1
-\end{align*}
+Condition \ref{eq:stab1} informs us that in the case of $c<1$ and $A<1/2$, stability is not guaranteed. It can be expected that this is where evaporation and condensation can produce instabilities (due to sufficiently small $A$ $\Leftrightarrow$ fast evaporation and condensation) that advection cannot necessarily eliminate (due to sufficiently small $c$ $\Leftrightarrow$ slow advection). This will even at best result in values for $r_v$ and $r_l$ outside of physical ranges (potentially if instabilities occur at all, regardless of whether they are eliminated or not) and growth without bound at worst. \\
+In addition, we find from Condition \ref{eq:stab5} that if $c>1$ and $A<1/2$ then
+\begin{align}
+\frac{A}{A-1} &< -1 \nonumber\\
+\left|\frac{A}{A-1}\right| &< 1 \nonumber\\
+1 < c \leq \frac{1}{2}\left(1 + \left|\frac{A}{A-1}\right|\right) &< 1	\label{eq:contradiction}
+\end{align}
 i.e. $1<c<1$: contradiction. We therefore find that if $A<1/2$ then stability cannot be guaranteed for \emph{any} $c$. For these reasons, it would be ideal to always use $A>1/2$ in practice, even though $A<1/2$ may not necessarily produce any significant instability. \\
-In general, we can produce a plot of predicted stability for the system based on the general-case stability condition. In this case, it is helpful to use condition \ref{eq:stable} and produce a plot showing the values of $K$ for which the stability condition holds for given $c$ and $E_r$ values. Such a plot can be seen in figure \ref{fig:stability_pred}.
+In general, we can produce a plot of predicted stability for the system based on the general-case stability condition. In this case, it is helpful to use Condition \ref{eq:stable} and produce a plot showing the values of $K$ for which the stability condition holds for given $c$ and $E_r$ values. Such a plot can be seen in Figure \ref{fig:stability_pred}.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{stability_pred.png}
 \caption{A plot of the stability of the system as predicted by the analysis above. The colour scale indicates the proportion of values for $K\in[0,1]$ for which the stability condition holds; e.g. in the yellow region, where the proportion is $100\%$, stability is guaranteed by the analysis.}
 \label{fig:stability_pred}
 \end{figure}
-However, figure \ref{fig:stability_pred} alone does not tell us how the system behaves for diverging $c$ and $A$. Condition \ref{eq:stab1} already tells us of the stability for $c\leq 1$, so let us consider the limiting behaviours of condition \ref{eq:stab4}.
+However, Figure \ref{fig:stability_pred} alone does not tell us how the system behaves for diverging $c$ and $A$. Condition \ref{eq:stab1} already tells us of the stability for $c\leq 1$, so let us consider the limiting behaviours of Condition \ref{eq:stab4}.
 \begin{align}
 \text{$c>1$ case as $c\to +\infty$:\quad} \left(\frac{A}{A-1}\right)^2 -1 &\geq \lim_{c\to +\infty}\left(4(c^2-c)\right) \nonumber \\
 \left(\frac{A}{A-1}\right)^2 -1 &\geq +\infty		\label{eq:stab2} \\
@@ -237,10 +239,10 @@ c^2-c &\leq 0 \nonumber\\
 c^2 &\leq 1		\label{eq:stab3}
 \end{align}
 Condition \ref{eq:stab2} is undefined at $A=1$ and false otherwise. This implies that for all $A\neq 1$ (that is, for all $E_r\neq\Delta t$), instability must occur for all $c>c_{\text{min}}$ for some $c_{\text{min}}>1$. As such, there does not exist an $A$ for which stability is guaranteed for all $c$. \\
-Condition \ref{eq:stab3} cannot be true for any $c>1$, but it is true for $c\leq 1$, as is trivially confirmed by condition \ref{eq:stab1}: the latter implies that for any $A>1$ ($\Leftrightarrow E_r>\Delta t$), stability is guaranteed for $c\leq 1$.
+Condition \ref{eq:stab3} cannot be true for any $c>1$, but it is true for $c\leq 1$, as is trivially confirmed by Condition \ref{eq:stab1}: the latter implies that for any $A>1$ ($\Leftrightarrow E_r>\Delta t$), stability is guaranteed for $c\leq 1$.
 
 \section{Model results}
-To examine simple behaviour of the model, we can see how the system evolves for some example values of $c$ and $E_r$. Such a plot, specifically showing the development of $r_v$ over time, can be seen in figure \ref{fig:samplot}.
+To examine simple behaviour of the model, we can see how the system evolves for some example values of $c$ and $E_r$. Such a plot, specifically showing the development of $r_v$ over time, can be seen in Figure \ref{fig:samplot}.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{samplot.png}
@@ -248,17 +250,17 @@ To examine simple behaviour of the model, we can see how the system evolves for 
 \label{fig:samplot}
 \end{figure}
 In the example model runs that are stable, $r_v$ approaches a pattern where it has values of approximately $0.0078$ in the colder thirds (of $T=10^{\circ}$C) and approximately $0.0143$ in the warmer middle third (of $T=20^{\circ}$C). The sum of $r_l$ and $r_v$ comes close to $1$ by an error on the order of $10^{-14}$ (probably only computational error), in the $c=0.5$, $E_r=0.3$ case at termination. \\
-In the model runs where instabilities arise, oscillations can be seen, oscillating variously over time and/or over space (seen in figure \ref{fig:samplot} as vertical and/or horizontal striping, respectively). It is worth mentioning that in most cases, at least part of the instabilities begin at the boundaries of the thirds of differing temperatures, suggesting them to be instabilities from evaporation and condensation. \\
+n the model runs where instabilities arise, oscillations can be seen, oscillating variously over time and space (seen in Figure \ref{fig:samplot} as vertical and horizontal striping, respectively). It is worth mentioning that in most cases, at least part of the instabilities begin at the boundaries of the thirds of differing temperatures, suggesting them to be instabilities from evaporation and condensation. \\
 It is impossible to tell for sure how the model is behaving by simply looking at the shape of $r_v$ at any given timestep. In order to better tell in particular whether a model run is stable, we can define an energy measure of the fluid, as
-\[
+\begin{equation} \label{eq:re_def}
 R = \sum_{\forall i}\left(r_{v,i}^2+r_{l,i}^2\right)
-\]
+\end{equation}
 and then track the change in the quantity
-\[
+\begin{equation} \label{eq:le_def}
 L = \frac{R^n - R^0}{R^0}
-\]
+\end{equation}
 over time, to ensure that the energy created by the numerical methods does not become too large. A fundamentally similar method of analysis is defined and described in \citet[p.~94]{Durran2010}. \\
-Plots showing the varying behaviours of $L$ can be seen in figure \ref{fig:exempla2}.
+Plots showing the varying behaviours of $L$ can be seen in Figure \ref{fig:exempla2}.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{exempla2.png}
@@ -266,12 +268,12 @@ Plots showing the varying behaviours of $L$ can be seen in figure \ref{fig:exemp
 \label{fig:exempla2}
 \end{figure}
 The plots which are steady (or apparently steady) have an $L$ approaching a small negative value close to $-0.02$: that is, they have a steady $R$ that is about 2\% less than $R_0$. This is because if $r_v$ increases from $r^0_v=0$ by a small difference $\alpha$ then
-\[
+\begin{equation} \label{eq:re_change}
 r_v^2 + r_l^2 = \alpha^2 + (1-\alpha)^2 = 2\left(\alpha^2 - \alpha\right) + 1
-\]
+\end{equation}
 which must be less than $R_0 = (0^2 + 1^2) = 1$, and so $R$ must decrease. \\
-As mentioned previously, although oscillations may be suppressed after instabilities arise, the instabilities can generate a large amount of energy in the system as they grow. This can be seen plainly in the top row of plots in figure \ref{fig:exempla2}, in which $L$ grows without limit. \\
-However, it can take a very long time before the instabilities may become large enough to see, whether they continue to grow without limit or not. Because of this, it is impossible to represent the model's behaviour comprehensively. Nevertheless, a plot showing the behaviour of $L$ up to $t=50$ is shown in figure \ref{fig:stable_alt}.
+As mentioned previously, although oscillations may be suppressed after instabilities arise, the instabilities can generate a large amount of energy in the system as they grow. This can be seen plainly in the top row of plots in Figure \ref{fig:exempla2}, in which $L$ grows without limit. \\
+However, it can take a very long time before the instabilities may become large enough to see, whether they continue to grow without limit or not. Because of this, it is impossible to represent the model's behaviour comprehensively. Nevertheless, a plot showing the behaviour of $L$ up to $t=50$ is shown in Figure \ref{fig:stable_alt}.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{stable_alt.png}
@@ -279,30 +281,30 @@ However, it can take a very long time before the instabilities may become large 
 \label{fig:stable_alt}
 \end{figure}
 For $c$ slightly greater than 1, the system's instabilities grow very slowly (taking longer than $t=50$ to become significant), so the border between stability and instability appears to be slightly greater than $c=1$. The apparently ``spottiness'' of the borders is due to numerical imprecision. \\
-The left ``edge of stability'' is similar to that seen in figure \ref{fig:stability_pred} (meeting $E_r=\Delta t/2$ at $c=0$), but we find the significant difference that the system is \emph{not} stable for $c>1$ and $E_r\approx\Delta t$. The large difference is likely because of the fact that our analysis is simplified: most significantly, we have treated $r_{vs}$ as constant over the domain in the analysis, when in fact it is not in the model runs. It is precisely at the vapour/liquid boundaries where instabilities occur (as aforementioned in the context of \citet{GS1990}), and this was already seen in how the instabilities arise from those boundaries in figure \ref{fig:samplot}.
+The left ``edge of stability'' is similar to that seen in Figure \ref{fig:stability_pred} (meeting $E_r=\Delta t/2$ at $c=0$), but we find the significant difference that the system is \emph{not} stable for $c>1$ and $E_r\approx\Delta t$. The large difference is likely because of the fact that our analysis is simplified: most significantly, we have treated $r_{vs}$ as constant over the domain in the analysis, when in fact it is not in the model runs. It is precisely at the vapour/liquid boundaries where instabilities occur (as aforementioned in the context of \citet{GS1990}), and this was already seen in how the instabilities arise from those boundaries in Figure \ref{fig:samplot}, so that our analysis fails here is not too surprising.
 
 \section{Implicit treatment of evaporation and condensation}
 As mentioned in the introduction, the fact that $E_r$ is limited by $\Delta t$ is awkward, as it means that we cannot have phase changes occur at an arbitrary rate, restricting how we can represent processes realistically. We can get around this by representing the processes which are dependent on $E_r$ (evaporation and condensation) with an implicit method: that is, with
-\[
+\begin{equation} \label{eq:implicit_def}
 r'_v = r_v + \min\left(\Delta t\frac{r_{vs} - r'_v}{E_r},r_l\right)
-\]
-as the equivalent to equation \ref{eq:2}. Since this equation is one of exponential growth and decay, the effect of using an implicit method is to have the change at each timestep be based on the rate of growth/decay at the end of the timestep instead of the beginning, meaning that decay is underestimated instead of overestimated. Importantly, this means that overcondensation and $r_v$ becoming negative cannot occur, such that we only have to limit $\Delta r_v|_{\text{cond}}$ in the overevaporation case (the restriction based on $r_l$).
+\end{equation}
+as the equivalent to Equation \ref{eq:2}. Since this equation is one of exponential growth and decay, the effect of using an implicit method is to have the change at each timestep be based on the rate of growth/decay at the end of the timestep instead of the beginning, meaning that decay is underestimated instead of overestimated. Importantly, this means that overcondensation and $r_v$ becoming negative cannot occur, such that we only have to limit $\Delta r_v|_{\text{cond}}$ in the overevaporation case (the restriction based on $r_l$).
 
 \section{Numerical analysis of the implicit method}
 Using the same methods as used previously with the explicit method, we can perform numerical analysis of the implicit method to see how its predicted stability differs.
-\begin{align*}
-S'_i &= S^n_i - \Delta t\frac{S'_i}{E_r}				\\
-\left(1+\frac{\Delta t}{E_r}\right)S'_i &= S^n_i		\\
-S'_i &= \left(1+\frac{\Delta t}{E_r}\right)^{-1}S^n_i	\\
-S^{n+1}_i &= S'_i - c\left(S'_i - S'_{i-1}\right)			\\
-S^{n+1}_i &= \left(1+\frac{\Delta t}{E_r}\right)^{-1}\left(\left(1-c\right)S^n_i + cS^n_{i-1}\right)	\\
-S^{n+1}_i &= \frac{E_r}{E_r+\Delta t}\left(\left(1-c\right)S^n_i + cS^n_{i-1}\right)				\\
-\epsilon^{n+1}_i &= \frac{E_r}{E_r+\Delta t}\left(\left(1-c\right)\epsilon^n_i + c\epsilon^n_{i-1}\right)	\\
-e^{\alpha\left(t+\Delta t\right)}e^{ikx} &= \frac{E_r}{E_r+\Delta t}\left(\left(1-c\right)e^{\alpha t}e^{ikx} + ce^{\alpha t}e^{ik\left(x-\Delta x\right)}\right)		\\
-G = e^{\alpha\Delta t} &= \frac{E_r}{E_r+\Delta t}\left(1 - c + ce^{-ik\Delta x}\right)	\\
-|G|^2 = G G^* &= \frac{E_r^2}{\left(E_r+\Delta t\right)^2}\left(1 - c + ce^{-ik\Delta x}\right)\left(1 - c + ce^{ik\Delta x}\right)	\\
-&= \frac{E_r^2}{\left(E_r+\Delta t\right)^2}\left(1 + 2(c^2-c)\left(1 - \cos\left(k\Delta x\right)\right)\right)
-\end{align*}
+\begin{align}
+S'_i &= S^n_i - \Delta t\frac{S'_i}{E_r}				\nonumber\\
+\left(1+\frac{\Delta t}{E_r}\right)S'_i &= S^n_i		\nonumber\\
+S'_i &= \left(1+\frac{\Delta t}{E_r}\right)^{-1}S^n_i	\nonumber\\
+S^{n+1}_i &= S'_i - c\left(S'_i - S'_{i-1}\right)			\nonumber\\
+S^{n+1}_i &= \left(1+\frac{\Delta t}{E_r}\right)^{-1}\left(\left(1-c\right)S^n_i + cS^n_{i-1}\right)	\nonumber\\
+S^{n+1}_i &= \frac{E_r}{E_r+\Delta t}\left(\left(1-c\right)S^n_i + cS^n_{i-1}\right)				\nonumber\\
+\epsilon^{n+1}_i &= \frac{E_r}{E_r+\Delta t}\left(\left(1-c\right)\epsilon^n_i + c\epsilon^n_{i-1}\right)	\nonumber\\
+e^{\alpha\left(t+\Delta t\right)}e^{ikx} &= \frac{E_r}{E_r+\Delta t}\left(\left(1-c\right)e^{\alpha t}e^{ikx} + ce^{\alpha t}e^{ik\left(x-\Delta x\right)}\right)		\nonumber\\
+G = e^{\alpha\Delta t} &= \frac{E_r}{E_r+\Delta t}\left(1 - c + ce^{-ik\Delta x}\right)	\nonumber\\
+|G|^2 = G G^* &= \frac{E_r^2}{\left(E_r+\Delta t\right)^2}\left(1 - c + ce^{-ik\Delta x}\right)\left(1 - c + ce^{ik\Delta x}\right)	\nonumber\\
+&= \frac{E_r^2}{\left(E_r+\Delta t\right)^2}\left(1 + 2(c^2-c)\left(1 - \cos\left(k\Delta x\right)\right)\right)		\label{eq:growth_imp}
+\end{align}
 Stability of the system is thus expected where
 \begin{align}
 |G|^2 &\leq 1 \nonumber\\
@@ -330,23 +332,24 @@ There are still differences in behaviour between the model runs depending on $E_
 \caption{Various plots of $L$ over time, using the model with the implicit method, for different values of $E_r$ and $c$. The horizontal axes are in time up to either $t=50$ or whenever $|L|>1$, whichever occurs first. The vertical axes are in space across the domain.}
 \label{fig:exempla_alt_imp}
 \end{figure}
-We also find that the behaviour of $L$ is no longer significantly different for differing $E_r$ if the model is stable. For the unstable runs (the top rof of figure \ref{exempla_alt_imp}), we do find that the instabilities grow faster for smaller $E_r$.
+We also find that the behaviour of $L$ is no longer significantly different for differing $E_r$ if the model is stable. For the unstable runs (the top row of Figure \ref{fig:exempla_alt_imp}), we do find that the instabilities grow faster for smaller $E_r$.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{stable_imp.png}
-\caption{A plot of energy against $E_r$ (horizontal axes) and $c$ (vertical axes), showing the value of $L$ at $t=50$.}
+\caption{A plot of energy against $E_r$ (horizontal axes) and $c$ (vertical axes), showing the value of $L$ at $t=50$. The system explodes for $c>1$ (yellow and white sections), but where $c$ is only slighty great than 1, $L$ does not reach a noticeably larger value than in the $c<1$ case before $t=50$.}
 \label{fig:stable_imp}
 \end{figure}
-All in all, we find that with the implicit method, there is no longer any variation in overall stability with $E_r$, and that stability can thus be achieved for any arbitrary $E_r$ as long as $c<1$. This agrees with our earlier analyses (viz equation \ref{eq:impstab}), and is a result that helps us to prevent instabilities in trying to model phase changes, as was desired.
-Note that as in figure \ref{fig:stable_imp}, because the instabilities for $c$ slightly greater than 1 grow very slowly, the border does not appear to be exactly at $c=1$.
+All in all, we find that with the implicit method, there is no longer any variation in overall stability with $E_r$, and that stability can thus be achieved for any arbitrary $E_r$ as long as $c<1$. This agrees with our earlier analyses (viz Equation \ref{eq:impstab}), and is a result that helps us to prevent instabilities in trying to model phase changes, as was desired. \\
+Note that as in Figure \ref{fig:stable_imp}, because the instabilities for $c$ slightly greater than 1 grow very slowly, the border does not appear to be exactly at $c=1$.
 
 \section{Summary, conclusions and future work}
 In this study, we have demonstrated two different ways of treating the problem of stability in advection-condensation models: one in which evaporation and condensation between prognostic vapour and liquid concentrations is handled using an explicit method, and one which uses an implicit representation. \\
 When using the explicit method, oscillations are often produced at the boundaries between evaporation and condensation, and these oscillations cannot always be suppressed by the advection. Whether stability is achievable or not is thus dependent on the timescales of the advection and condensation processes. \\
-The implicit method does not feature any dependence of stability on the timescale of evaporation and condensation, unlike with the explicit representation: since the rate of phase change is not constrained by the model's timestep, this means that we can have phase changes occur at arbitrary rates, assisting in representing evaporation and condensation realistically. \\
-However, the work of this study does not completely solve the problem of realistically representing arbitrary phase changes, as we have only looked at one very narrow and idealised test case: it is necessary to see what physical features and behaviours that we have not yet considered could affect the model's stability in interaction with evaporation and condensation. \\
-As far as physics are concerned, one could try using test cases that are more realistic, or more extreme (for worst-case testing); or investigations could be done in more than one spatial dimension, as real airflow is rarely linear. For an example investigation into better ``realistic'' representation of air flow, one could consider including variable altitude, and investigate the effects of vertical flow by buoyancy rather than (or in addition to) advection. It would also be useful to be able to represent temperature variations in a more typical way. \\
-As for improving the model itself, it would be useful to have an implicit method for advection as well as evaporation and condensation. However, this brings its own difficulties, as mentioned by \citet{GS1990}, who in fact concluded that the benefit of implicit advection was negligibly small. One could also use numerical methods of higher orders, or of a kind other than finite differences, though then other complexities such as computational expense are to be considered as well.
+The implicit method does not feature any dependence of stability on the timescale of evaporation and condensation, unlike with the explicit representation: since the rate of phase change is not constrained by the model's timestep, this means that phase changes can occur in the model at arbitrary rates, assisting in representing evaporation and condensation realistically. \\
+However, the work of this study does not completely solve the problem of realistically representing arbitrary phase changes, as we have only looked at one very narrow and idealised test case: it is necessary to see how physical features and behaviours that we have not yet considered could affect the model's stability in interaction with evaporation and condensation. \\
+As far as physics are concerned, one could try using test cases that are more realistic, or more extreme (for worst-case testing); or investigations could be done in more than one spatial dimension, as real airflow is rarely linear. For an example investigation into better ``realistic'' representation of airflow, one could consider including variable altitude, and investigate the effects of vertical flow by buoyancy rather than (or in addition to) advection. It would also be useful to be able to represent temperature variations in a more typical way. \\
+There is also that we have a simplified system of phase changes, only considering evaporation and condensation between liquid and vapour. It would be beneficial to consider other physical processes such as freezing or precipitation of fluid out of the system, processes which are indeed considered by models like those discussed by \citet{Wilson2008}, and quite possibly represent these processes by implicit numerical methods of some kind as well. \\
+As for improving the model itself, it would be useful to have an implicit method for advection as well, as done by \citet{GS1990}. However, implicit methods for advection bring their own difficulties, and \citeauthor{GS1990} in fact concluded that the benefit of using them was negligibly small. One could also use numerical methods of higher orders, or of a kind other than finite differences, though then other complexities such as computational expense need also be considered.
 
 \newpage
 \bibliography{references}
